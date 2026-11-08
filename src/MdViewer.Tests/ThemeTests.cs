@@ -101,6 +101,31 @@ public static class ThemeTests
             Harness.True(resolved.Id is "light" or "dark", "auto resolves");
         });
 
+        Harness.Test("system preference matches the registry", () =>
+        {
+            bool expected = false;
+            try
+            {
+                using Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                    @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                object? apps = key?.GetValue("AppsUseLightTheme");
+                object? system = key?.GetValue("SystemUsesLightTheme");
+                expected = apps is int a ? a == 0 : system is int s && s == 0;
+            }
+            catch
+            {
+                // registry unavailable: the resolver must simply answer "light"
+            }
+
+            Harness.Equal(expected, ThemeCatalog.SystemPrefersDark(), "detection reads AppsUseLightTheme");
+        });
+
+        Harness.Test("explicit theme ignores the system setting", () =>
+        {
+            Harness.Equal("light", ThemeCatalog.Resolve("light").Id, "light");
+            Harness.Equal("dark", ThemeCatalog.Resolve("dark").Id, "dark");
+        });
+
         Harness.Test("zoom scales every size", () =>
         {
             Theme zoomed = ThemeCatalog.Light.WithScale(1.5f);

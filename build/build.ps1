@@ -22,7 +22,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('build', 'test', 'publish', 'run', 'shots', 'clean', 'all')]
+    [ValidateSet('build', 'test', 'publish', 'installer', 'run', 'shots', 'clean', 'all')]
     [string]$Task = 'build',
 
     [ValidateSet('Debug', 'Release')]
@@ -150,6 +150,57 @@ function Publish-App {
     Write-Host "  mdview.exe: $size MB" -ForegroundColor Green
 }
 
+function Publish-Installer {
+    Write-Host '» installer (Inno Setup)' -ForegroundColor Cyan
+
+    # The installer ships an *uncompressed* payload: the portable exe is already
+    # compressed internally, so LZMA2 can only win on a raw single-file build.
+    # Measured: 114 MB raw -> ~35 MB setup, versus 50 MB compressed -> 45 MB setup.
+    $payloadDir = Join-Path $repoRoot 'artifacts\installer-payload'
+    if (Test-Path $payloadDir) { Remove-Item -Recurse -Force $payloadDir }
+    Invoke-DotNet -Arguments @(
+        'publish', $appProj,
+        '-c', 'Release',
+        '-r', 'win-x64',
+        '--self-contained', 'true',
+        '-p:PublishSingleFile=true',
+        '-p:IncludeNativeLibrariesForSelfExtract=true',
+        '-p:EnableCompressionInSingleFile=false',
+        '-p:DebugType=none',
+        '-o', $payloadDir,
+        '-v', 'minimal', '--nologo'
+    ) | Out-Null
+
+    $payload = Join-Path $payloadDir 'mdview.exe'
+    if (-not (Test-Path $payload)) { throw "payload not produced: $payload" }
+
+    if (-not (Test-Path (Join-Path $repoRoot 'installer\wizard-large.bmp'))) {
+        Write-Host '  generating wizard artwork' -ForegroundColor DarkGray
+        & (Join-Path $repoRoot 'build\installer-art.ps1') | Out-Null
+    }
+
+    $iscc = @(
+        'C:\Program Files (x86)\Inno Setup 6\ISCC.exe',
+        'C:\Program Files\Inno Setup 6\ISCC.exe'
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $iscc) {
+        throw 'Inno Setup 6 not found. Install it from https://jrsoftware.org/isdl.php and rerun -Task installer.'
+    }
+
+    & $iscc "/DPayloadFile=$payload" (Join-Path $repoRoot 'installer\MD.Viewer.iss') | ForEach-Object {
+        $line = "$_"
+        if ($line -match 'Successful compile|Error|Warning') { Write-Host "  $line" }
+    }
+
+    if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+    $setup = Get-ChildItem (Join-Path $repoRoot 'artifacts\installer\*.exe') |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($setup) {
+        Write-Host ("  {0}: {1} MB" -f $setup.Name, [math]::Round($setup.Length / 1MB, 1)) -ForegroundColor Green
+    }
+}
+
 function Invoke-App {
     Write-Host '» run' -ForegroundColor Cyan
     $exe = Join-Path $repoRoot "src\MdViewer.App\bin\$Configuration\net11.0-windows\mdview.exe"
@@ -173,10 +224,11 @@ switch ($Task) {
     'build' { Build-Solution }
     'test' { Build-Solution; Test-All }
     'publish' { Build-Solution; Publish-App }
+    'installer' { Build-Solution; Publish-Installer }
     'run' { Build-Solution; Invoke-App }
     'clean' { Clear-All }
     'shots' { Build-Solution; & $shotScript -Configuration $Configuration }
-    'all' { Build-Solution; Test-All; Publish-App }
+    'all' { Build-Solution; Test-All; Publish-App; Publish-Installer }
 }
 
 Write-Host 'done' -ForegroundColor Green

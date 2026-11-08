@@ -9,57 +9,6 @@ using MdViewer.Render.Theming;
 
 namespace MdViewer.App;
 
-/// <summary>Window icon drawn at runtime (no binary assets in the repository).</summary>
-internal static partial class AppIcon
-{
-    public static Icon Create()
-    {
-        using var bitmap = new Bitmap(64, 64);
-        using (Graphics g = Graphics.FromImage(bitmap))
-        {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Color.Transparent);
-
-            var sheet = new RectangleF(10, 6, 44, 52);
-            using (var path = MdViewer.Render.Rendering.PaintContext.RoundedPath(sheet, 8f))
-            using (var brush = new LinearGradientBrush(sheet, Color.FromArgb(0x2F, 0x6F, 0xEB), Color.FromArgb(0x1B, 0x4C, 0xB8), 60f))
-            {
-                g.FillPath(brush, path);
-            }
-
-            using (var white = new SolidBrush(Color.White))
-            {
-                g.FillRectangle(white, 18, 16, 28, 4);
-                g.FillRectangle(white, 18, 25, 20, 4);
-                g.FillRectangle(white, 18, 34, 24, 4);
-            }
-
-            using (var accent = new SolidBrush(Color.FromArgb(0xFF, 0xD1, 0x66)))
-            {
-                g.FillRectangle(accent, 18, 44, 14, 5);
-            }
-
-            using var pen = new Pen(Color.FromArgb(40, 0, 0, 0), 1.5f);
-            g.DrawLine(pen, 46, 12, 46, 44);
-        }
-
-        IntPtr handle = bitmap.GetHicon();
-        try
-        {
-            using Icon temporary = Icon.FromHandle(handle);
-            return (Icon)temporary.Clone();
-        }
-        finally
-        {
-            DestroyIcon(handle);
-        }
-    }
-
-    [System.Runtime.InteropServices.LibraryImport("user32.dll")]
-    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-    private static partial bool DestroyIcon(IntPtr handle);
-}
-
 /// <summary>Themed modal dialog for the shortcut list and the About box.</summary>
 internal sealed class InfoDialog : Form
 {
@@ -143,6 +92,7 @@ public sealed class DocumentPrinter
         e.HasMorePages = _page * margin.Height < layout.Height;
     }
 }
+
 
 
 

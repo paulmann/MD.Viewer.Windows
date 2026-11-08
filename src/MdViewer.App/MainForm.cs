@@ -73,22 +73,37 @@ public sealed class MainForm : Form
     private bool _suppressEditorEvents;
     private bool _uiReady;
 
-    public MainForm(AppSettings settings)
+    // Runtime mirror of the persisted preferences: command-line switches change these
+    // for the session only, while user gestures write through to _settings.
+    private bool _serif;
+    private bool _lineNumbers;
+    private bool _wrapCode;
+    private bool _numbering;
+
+    public MainForm(AppSettings settings, LaunchOptions? launch = null)
     {
+        LaunchOptions options = launch ?? new LaunchOptions();
         _settings = settings;
-        _themeMode = ParseTheme(settings.Theme);
-        _theme = ThemeCatalog.Resolve(settings.Theme).WithScale(settings.Zoom).WithSerif(settings.Serif);
-        _mode = ParseMode(settings.Mode);
-        _outlineVisible = settings.Outline;
+
+        _serif = options.Serif ?? settings.Serif;
+        _lineNumbers = options.LineNumbers ?? settings.LineNumbers;
+        _wrapCode = options.WrapCode ?? settings.WrapCode;
+        _numbering = options.Numbering ?? settings.Numbering;
+
+        _themeMode = options.Theme ?? ParseTheme(settings.Theme);
+        float zoom = options.Zoom ?? settings.Zoom;
+        _theme = ThemeCatalog.Resolve(_themeMode.ToString().ToLowerInvariant()).WithScale(zoom).WithSerif(_serif);
+        _mode = options.Mode ?? ParseMode(settings.Mode);
+        _outlineVisible = options.ToggleOutline ?? settings.Outline;
         _previewVisible = settings.EditorPreview;
 
         _renderer = new MarkdownRenderer(_theme, DeviceDpi / 96f)
         {
             Settings = new RenderSettings
             {
-                NumberHeadings = settings.Numbering,
-                CodeLineNumbers = settings.LineNumbers,
-                WrapCode = settings.WrapCode,
+                NumberHeadings = _numbering,
+                CodeLineNumbers = _lineNumbers,
+                WrapCode = _wrapCode,
                 UnderlineLinks = false,
             },
         };
@@ -127,12 +142,13 @@ public sealed class MainForm : Form
         _outline.AnchorActivated += (_, id) => NavigateToAnchor(id);
 
         _view = new DocumentView { Renderer = _renderer, Dock = DockStyle.None };
+        _view.ReadingWidthOverride = options.ReadingWidth ?? settings.ReadingWidth;
         _view.LinkActivated += (_, url) => HandleLink(url);
         _view.ScrollChanged += (_, _) => OnViewScrolled();
         _view.ZoomRequested += (_, direction) => SetZoom(_theme.Scale + direction * 0.1f, fromWheel: true);
         _view.Toast += (_, message) => Toast(message);
 
-        _editor = new MarkdownEditor { Dock = DockStyle.None, ShowLineNumbers = settings.LineNumbers };
+        _editor = new MarkdownEditor { Dock = DockStyle.None, ShowLineNumbers = _lineNumbers };
         _editor.CaretMoved += (_, _) => UpdateStatus();
         _editor.TextChangedByUser += (_, _) => OnEditorChanged();
         _editor.ZoomRequested += (_, direction) => SetZoom(_theme.Scale + direction * 0.1f, fromWheel: true);
@@ -382,7 +398,7 @@ public sealed class MainForm : Form
     {
         DoubleLineBreaks = _settings.LineBreaks,
         SmartPunctuation = _settings.SmartPunctuation,
-        HeadingNumbering = _settings.Numbering,
+        HeadingNumbering = _numbering,
     };
 
     private MarkdownDocument Parse(string text, string? path) =>
@@ -651,7 +667,7 @@ public sealed class MainForm : Form
 
     // ----------------------------------------------------------------- modes
 
-    public void SetMode(ViewMode mode)
+    public void SetMode(ViewMode mode, bool persist = true)
     {
         if (_mode == mode)
         {
@@ -665,7 +681,10 @@ public sealed class MainForm : Form
         }
 
         _mode = mode;
-        _settings.Mode = mode.ToString().ToLowerInvariant();
+        if (persist)
+        {
+            _settings.Mode = mode.ToString().ToLowerInvariant();
+        }
 
         if (mode == ViewMode.Rendered && _active is not null)
         {
@@ -685,7 +704,7 @@ public sealed class MainForm : Form
         HideFind();
     }
 
-    private void SetZoom(float zoom, bool fromWheel = false)
+    private void SetZoom(float zoom, bool fromWheel = false, bool persist = true)
     {
         float clamped = Math.Clamp(MathF.Round(zoom * 20f) / 20f, 0.6f, 2.6f);
         if (MathF.Abs(clamped - _theme.Scale) < 0.001f)
@@ -700,7 +719,11 @@ public sealed class MainForm : Form
         }
 
         _theme = _theme.WithScale(clamped);
-        _settings.Zoom = clamped;
+        if (persist)
+        {
+            _settings.Zoom = clamped;
+        }
+
         _renderer.SetTheme(_theme);
         ApplyTheme();
 
@@ -723,13 +746,18 @@ public sealed class MainForm : Form
             _ => ThemeMode.Auto,
         };
 
-        ApplyTheme();
+        ApplyTheme(persist: true);
     }
 
-    private void ApplyTheme()
+    /// <param name="persist">True for a user gesture; false for start-up, launch switches and
+    /// following the Windows theme — those must not rewrite the saved preference.</param>
+    private void ApplyTheme(bool persist = false)
     {
-        _theme = ThemeCatalog.Resolve(_themeMode.ToString().ToLowerInvariant()).WithScale(_theme.Scale).WithSerif(_settings.Serif);
-        _settings.Theme = _themeMode.ToString().ToLowerInvariant();
+        _theme = ThemeCatalog.Resolve(_themeMode.ToString().ToLowerInvariant()).WithScale(_theme.Scale).WithSerif(_serif);
+        if (persist)
+        {
+            _settings.Theme = _themeMode.ToString().ToLowerInvariant();
+        }
         _renderer.SetTheme(_theme);
 
         _btnTheme.Icon = _themeMode switch
@@ -1109,26 +1137,29 @@ public sealed class MainForm : Form
         var view = new ToolStripMenuItem(L.T("menu.view"));
         AddViewItem(view, L.T("menu.outline"), _outlineVisible, ToggleOutline);
         AddViewItem(view, L.T("menu.preview"), _previewVisible, TogglePreview);
-        AddViewItem(view, L.T("menu.lineNumbers"), _settings.LineNumbers, () =>
+        AddViewItem(view, L.T("menu.lineNumbers"), _lineNumbers, () =>
         {
-            _settings.LineNumbers = !_settings.LineNumbers;
-            _editor.ShowLineNumbers = _settings.LineNumbers;
-            _renderer.Settings = _renderer.Settings with { CodeLineNumbers = _settings.LineNumbers };
+            _lineNumbers = !_lineNumbers;
+            _settings.LineNumbers = _lineNumbers;
+            _editor.ShowLineNumbers = _lineNumbers;
+            _renderer.Settings = _renderer.Settings with { CodeLineNumbers = _lineNumbers };
             _renderer.Invalidate();
             _view.RebindLayout();
             _editor.Invalidate();
         });
-        AddViewItem(view, L.T("menu.wrapCode"), _settings.WrapCode, () =>
+        AddViewItem(view, L.T("menu.wrapCode"), _wrapCode, () =>
         {
-            _settings.WrapCode = !_settings.WrapCode;
-            _renderer.Settings = _renderer.Settings with { WrapCode = _settings.WrapCode };
+            _wrapCode = !_wrapCode;
+            _settings.WrapCode = _wrapCode;
+            _renderer.Settings = _renderer.Settings with { WrapCode = _wrapCode };
             _renderer.Invalidate();
             _view.RebindLayout();
         });
-        AddViewItem(view, L.T("menu.numbering"), _settings.Numbering, () =>
+        AddViewItem(view, L.T("menu.numbering"), _numbering, () =>
         {
-            _settings.Numbering = !_settings.Numbering;
-            _renderer.Settings = _renderer.Settings with { NumberHeadings = _settings.Numbering };
+            _numbering = !_numbering;
+            _settings.Numbering = _numbering;
+            _renderer.Settings = _renderer.Settings with { NumberHeadings = _numbering };
             _renderer.Invalidate();
             _view.RebindLayout();
         });
@@ -1142,13 +1173,14 @@ public sealed class MainForm : Form
             _settings.SmartPunctuation = !_settings.SmartPunctuation;
             ReparseActive();
         });
-        AddViewItem(view, L.T("menu.serif"), _settings.Serif, () =>
+        AddViewItem(view, L.T("menu.serif"), _serif, () =>
         {
-            _settings.Serif = !_settings.Serif;
-            _theme = _theme.WithSerif(_settings.Serif);
+            _serif = !_serif;
+            _settings.Serif = _serif;
+            _theme = _theme.WithSerif(_serif);
             _renderer.SetTheme(_theme);
             _view.RebindLayout();
-            ApplyTheme();
+            ApplyTheme(persist: true);
         });
         menu.Items.Add(view);
 
@@ -1167,7 +1199,7 @@ public sealed class MainForm : Form
             item.Click += (_, _) =>
             {
                 _themeMode = mode;
-                ApplyTheme();
+                ApplyTheme(persist: true);
             };
             theme.DropDownItems.Add(item);
         }
@@ -1534,7 +1566,6 @@ public sealed class MainForm : Form
             _settings.WindowHeight = Bounds.Height;
         }
 
-        _settings.Outline = _outlineVisible;
         _settings.EditorPreview = _previewVisible;
         _settings.Session = _sessions.Where(s => s.Path is not null).Select(s => s.Path!).ToList();
         _settings.Save();
@@ -1683,7 +1714,7 @@ public sealed class MainForm : Form
     public void SetThemeMode(ThemeMode mode)
     {
         _themeMode = mode;
-        ApplyTheme();
+        ApplyTheme(persist: false);
     }
 
     public void SetOutlineVisible(bool visible)
@@ -1702,19 +1733,37 @@ public sealed class MainForm : Form
         }
     }
 
-    public void ApplyLaunchOptions(LaunchOptions options)
-    {
-        if (options.Theme is ThemeMode theme && theme != _themeMode)
-        {
-            _themeMode = theme;
-            ApplyTheme();
-        }
-    }
-
     public void SetReadingWidth(float width)
     {
         _view.ReadingWidthOverride = Math.Clamp(width, 380f, 1600f);
         _view.RebindLayout();
+    }
+
+    /// <summary>
+    /// "Auto" follows the Windows app mode; Windows broadcasts WM_SETTINGCHANGE when the
+    /// user flips it, and the window must repaint without a restart.
+    /// </summary>
+    protected override void WndProc(ref Message m)
+    {
+        base.WndProc(ref m);
+
+        const int WmSettingChange = 0x001A;
+        const int WmThemeChanged = 0x031A;
+        if ((m.Msg == WmSettingChange || m.Msg == WmThemeChanged) && _themeMode == ThemeMode.Auto && _uiReady)
+        {
+            BeginInvoke(FollowWindowsTheme);
+        }
+    }
+
+    private void FollowWindowsTheme()
+    {
+        Theme resolved = ThemeCatalog.Resolve("auto");
+        if (string.Equals(resolved.Id, _theme.Id, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        ApplyTheme(persist: false);
     }
 
     public void FocusFind() => ShowFind();

@@ -131,6 +131,13 @@ public static class ThemeCatalog
             {
                 return number == 0;
             }
+
+            // Some Windows builds only maintain the system-wide value.
+            object? system = key?.GetValue("SystemUsesLightTheme");
+            if (system is int systemNumber)
+            {
+                return systemNumber == 0;
+            }
         }
         catch
         {

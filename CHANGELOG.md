@@ -4,6 +4,38 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] — 2026-11-09
+
+Installer, application icon, and the theme bug the owner hit.
+
+### Added
+
+- **Windows installer** (`installer\MD.Viewer.iss`, Inno Setup 6): installs to
+  `C:\Program Files\Deynekin\MD.Viewer`, registers itself in **Installed apps** with a working
+  uninstaller, offers checkboxes for the Start menu folder, desktop icon, Quick Launch, Favorites
+  and the `.md` association, and two Finish-page checkboxes — launch the viewer and open README.md.
+  Setup is 34.8 MB (LZMA2 over an uncompressed payload; see docs/INSTALLER.md for the measurement).
+- **File association**: `.md`, `.markdown` and `.mdown` get the `MDViewer.Markdown` ProgID, an
+  “Open with” entry and a Default-apps registration. Uninstall clears the default only if it still
+  points at the viewer.
+- **Application icon**, drawn in code and written as a nine-resolution `.ico`
+  (`--save-icon`), embedded in the exe so Explorer, the taskbar and Installed apps show it.
+- `--save-icon <file>` for regenerating that icon; the installer wizard artwork is rendered from
+  the same source by `build/installer-art.ps1`.
+- `-Task installer` in the build script.
+
+### Fixed
+
+- **The saved theme could pin light mode forever.** `--theme light` (and `--zoom`, `--mode`,
+  `--serif`, `--no-toc`, `--line-numbers`, `--wrap`, `--numbering`) wrote the value into the
+  preferences, so every later launch ignored the Windows setting. Command-line switches are now
+  session-only; a gesture in the UI still persists.
+- **“Auto” now follows Windows live**: the window listens for `WM_SETTINGCHANGE` /
+  `WM_THEMECHANGED` and repaints when the OS app mode changes.
+- Theme detection falls back to `SystemUsesLightTheme` when `AppsUseLightTheme` is missing.
+- `--width` was parsed but never applied to the reading column; `--toc/--no-toc` and the other
+  switches now reach the window instead of the settings file.
+
 ## [1.2.1] — 2026-11-09
 
 Nothing about the runtime changed — only the wording that made it look like a requirement.

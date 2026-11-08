@@ -57,6 +57,13 @@ that runtime and 74 KB is the application itself (`src/MdViewer.App/bin/.../mdvi
 
 ## Quick start
 
+**Install** (recommended): run `MD.Viewer-1.3.0-setup.exe` — it puts the viewer into
+`C:\Program Files\Deynekin\MD.Viewer`, adds it to *Installed apps*, offers shortcuts for the Start
+menu, desktop, Quick Launch and Favorites, and registers `.md`. Details and silent switches:
+[docs/INSTALLER.md](docs/INSTALLER.md).
+
+**Portable**: `mdview.exe` next to your documents, no installation at all.
+
 ```powershell
 # open a file
 .\mdview.exe notes.md

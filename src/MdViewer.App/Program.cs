@@ -64,9 +64,12 @@ internal static partial class Program
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += (_, e) => ShowFatal(e.Exception);
 
-        AppSettings settings = ApplyOverrides(AppSettings.Load(), options);
+        // Command-line switches are session-only: they are handed to the form instead of
+        // being written into the saved preferences (a `--theme light` run must not pin the
+        // theme for every later launch).
+        AppSettings settings = AppSettings.Load();
 
-        using var form = new MainForm(settings);
+        using var form = new MainForm(settings, options);
 
         if (options.FullScreen)
         {
@@ -76,11 +79,6 @@ internal static partial class Program
         else if (options.Maximized)
         {
             form.WindowState = FormWindowState.Maximized;
-        }
-
-        if (options.ReadingWidth is float width)
-        {
-            form.SetReadingWidth(width);
         }
 
         List<string> files = [];
@@ -115,6 +113,14 @@ internal static partial class Program
         if (options.Print)
         {
             form.Shown += (_, _) => form.BeginInvoke(form.PrintCurrentDocument);
+        }
+
+        if (options.SaveIcon is { Length: > 0 } iconPath)
+        {
+            using var bridge = new ConsoleBridge();
+            AppIcon.Save(iconPath);
+            Console.WriteLine("icon: " + iconPath + " (" + new FileInfo(iconPath).Length + " bytes)");
+            return 0;
         }
 
         if (options.AboutShot is { Length: > 0 } aboutShot)
@@ -175,67 +181,6 @@ internal static partial class Program
 
         Application.Run(form);
         return 0;
-    }
-
-    /// <summary>Command-line switches win over the saved preferences.</summary>
-    private static AppSettings ApplyOverrides(AppSettings settings, LaunchOptions options)
-    {
-        if (options.Theme is ThemeMode theme)
-        {
-            settings.Theme = theme.ToString().ToLowerInvariant();
-        }
-
-        if (options.Mode is ViewMode mode)
-        {
-            settings.Mode = mode.ToString().ToLowerInvariant();
-        }
-
-        if (options.Zoom is float zoom)
-        {
-            settings.Zoom = zoom;
-        }
-
-        if (options.ReadingWidth is float readingWidth)
-        {
-            settings.ReadingWidth = readingWidth;
-        }
-
-        if (options.Serif is bool serif)
-        {
-            settings.Serif = serif;
-        }
-
-        if (options.LineNumbers is bool lineNumbers)
-        {
-            settings.LineNumbers = lineNumbers;
-        }
-
-        if (options.WrapCode is bool wrap)
-        {
-            settings.WrapCode = wrap;
-        }
-
-        if (options.Numbering is bool numbering)
-        {
-            settings.Numbering = numbering;
-        }
-
-        if (options.ToggleOutline is bool outline)
-        {
-            settings.Outline = outline;
-        }
-
-        if (options.Watch)
-        {
-            settings.Watch = true;
-        }
-
-        if (options.NoSession)
-        {
-            settings.Session.Clear();
-        }
-
-        return settings;
     }
 
     private static void ShowFatal(Exception exception)
@@ -360,5 +305,7 @@ internal sealed partial class ConsoleBridge : IDisposable
         }
     }
 }
+
+
 
 

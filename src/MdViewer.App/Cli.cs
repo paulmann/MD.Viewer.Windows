@@ -80,6 +80,9 @@ public sealed class LaunchOptions
     /// <summary>Development: capture the About dialog and exit.</summary>
     public string? AboutShot { get; set; }
 
+    /// <summary>Development: write the application .ico and exit.</summary>
+    public string? SaveIcon { get; set; }
+
     public int ScreenshotDelay { get; set; } = 700;
 
     public List<string> Errors { get; } = [];
@@ -309,6 +312,10 @@ public sealed class LaunchOptions
                     options.UiDump = true;
                     break;
 
+                case "--save-icon":
+                    options.SaveIcon = NextValue();
+                    break;
+
                 case "--about-shot":
                     options.AboutShot = NextValue();
                     break;
@@ -419,6 +426,7 @@ public sealed class LaunchOptions
         return sb.ToString();
     }
 }
+
 
 
 
