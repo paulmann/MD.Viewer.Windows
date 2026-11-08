@@ -6,7 +6,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#requirements)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#what-it-deliberately-does-not-do)
-[![Tests](https://img.shields.io/badge/tests-144%20checks-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/tests-146%20checks-brightgreen)](docs/TESTING.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/paulmann/MD.Viewer.Windows?label=release)](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)
 
@@ -206,7 +206,7 @@ real, not for show:
 ```powershell
 # .NET 11 SDK (C# 15) required — see docs/BUILD.md for the exact version and the
 # two environment quirks this workspace has.
-pwsh -File build/build.ps1 -Task test      # build + 144 checks
+pwsh -File build/build.ps1 -Task test      # build + 146 checks
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (self-contained)
 ```
 
@@ -246,6 +246,7 @@ samples/              Feature tour and a Russian typography sample
 ## License
 
 PolyForm Noncommercial License 1.0.0 — see [LICENSE](LICENSE).
+
 
 
 

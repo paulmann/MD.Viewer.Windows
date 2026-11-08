@@ -7,7 +7,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#требования)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Зависимости](https://img.shields.io/badge/зависимости-ноль-brightgreen)](#чего-он-сознательно-не-делает)
-[![Тесты](https://img.shields.io/badge/тесты-144%20проверки-brightgreen)](docs/TESTING.md)
+[![Тесты](https://img.shields.io/badge/тесты-146%20проверок-brightgreen)](docs/TESTING.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 [![Релиз](https://img.shields.io/github/v/release/paulmann/MD.Viewer.Windows?label=%D1%80%D0%B5%D0%BB%D0%B8%D0%B7)](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)
 
@@ -195,7 +195,7 @@ Ctrl+\ оглавление · Ctrl+Shift+P просмотр в редактор
 
 ```powershell
 # нужен .NET 11 SDK (C# 15) — точная версия и две ловушки окружения в docs/BUILD.md
-pwsh -File build/build.ps1 -Task test      # сборка + 144 проверки
+pwsh -File build/build.ps1 -Task test      # сборка + 146 проверок
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (самодостаточный)
 ```
 
@@ -235,6 +235,7 @@ samples/              экскурсия по функциям и образец
 ## Лицензия
 
 PolyForm Noncommercial License 1.0.0 — см. [LICENSE](LICENSE).
+
 
 
 

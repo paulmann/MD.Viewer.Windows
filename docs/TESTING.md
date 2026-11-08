@@ -4,14 +4,14 @@
 pwsh -File build/build.ps1 -Task test     # everything below, exit code 0/1
 ```
 
-144 checks across ten suites; the runner is a console executable (`mdview-tests.exe`) with no test
+146 checks across ten suites; the runner is a console executable (`mdview-tests.exe`) with no test
 framework dependency.
 
 | Suite | Checks | What it protects |
 | --- | --- | --- |
 | `parser` (12 sub-suites) | 65 | Every Markdown construct, front matter, footnotes, chains, entities, statistics |
 | `layout` | 11 | Wrapping, anchors, link regions, tables, zoom, pathological input |
-| `theme` | 23 | WCAG contrast for every palette pair that carries text, both themes |
+| `theme` | 25 | WCAG contrast for every palette pair that carries text, both themes, plus registry detection |
 | `diagrams` + `mermaid:*` | 17 | Flowchart and six more diagram types, shapes, labels, dispatch, fallbacks |
 | `editor` | 4 | Insert/replace/selection, find hits, caret coordinates |
 | `extras` | 22 | Emphasis corners, reference links, definition lists, typography, line breaks, glossary, images |
