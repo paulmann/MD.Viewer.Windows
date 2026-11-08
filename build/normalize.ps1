@@ -20,7 +20,7 @@ $OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = [System
 
 $patterns = @('*.cs', '*.md', '*.csproj', '*.slnx', '*.props', '*.targets', '*.json', '*.ps1',
     '*.py', '*.yml', '*.yaml', '*.manifest', '*.editorconfig', '*.gitignore', '*.gitattributes',
-    '*.xml', '*.html', '*.css', '*.js')
+    '*.xml', '*.html', '*.css', '*.js', '*.iss')
 
 $encoding = [System.Text.UTF8Encoding]::new($false)
 $utf8Strict = [System.Text.UTF8Encoding]::new($false, $true)
@@ -78,3 +78,4 @@ else {
     Write-Host "normalised: $($changed.Count) files" -ForegroundColor Green
     $changed | ForEach-Object { Write-Host "  $_" }
 }
+
