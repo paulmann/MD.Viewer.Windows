@@ -94,7 +94,7 @@ gracefully, is in **[docs/MARKDOWN.md](docs/MARKDOWN.md)**.
 * Headings (ATX/setext, `{#id}`, numbering), emphasis, strike, mark, sub/superscript, code spans
 * Fenced code with `title="…"`, indented code, language-aware highlighting for ~20 language
   families, copy button per block
-* Tables with per-column alignment; two-column tables render as glossaries
+* Tables with per-column alignment
 * Lists: nested, ordered with start values, task lists with checkboxes
 * Block quotes, GitHub alerts (`> [!NOTE]` … `> [!CAUTION]`), definition lists
 * Footnotes (reference and inline), `[TOC]`, YAML front matter, emoji shortcodes
@@ -231,6 +231,7 @@ samples/              Feature tour and a Russian typography sample
 ## License
 
 PolyForm Noncommercial License 1.0.0 — see [LICENSE](LICENSE).
+
 
 
 
