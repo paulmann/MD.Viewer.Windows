@@ -47,6 +47,32 @@ Finish page (checkboxes):
   dialog during the progress page: that reads as a failure and blocks the install.
   The program is always registered as an “Open with” candidate either way.
 
+## Upgrading, downgrading, removing
+
+An upgrade is **in place**, not “uninstall, then install”: the `AppId` stays the same, so Setup
+finds the existing product, reuses `C:\Program Files\Deynekin\MD.Viewer`, keeps the task selection
+(`UsePreviousTasks`) and simply replaces the files and the Installed-apps entry. There is exactly
+one entry afterwards and one uninstaller — no `unins001` copies.
+
+What survives an upgrade, measured on 1.3.0 → 1.3.1 → 1.3.2:
+
+| | |
+| --- | --- |
+| Installed-apps entry | one, version updated |
+| Task selection | remembered (Start menu, desktop, Quick Launch, Favorites, association) |
+| Shortcuts | all kept, retargeted to the new files |
+| `%APPDATA%\MD.Viewer\settings.json` | byte-identical — the hash did not change |
+
+Files that the new version no longer ships would otherwise linger, so the script now carries an
+`[InstallDelete]` block that purges `{app}\docs` and `{app}\samples` before copying. Both folders
+belong entirely to the product. Verified: a planted `docs\obsolete-page.md` and
+`samples\old-sample.md` disappear on upgrade.
+
+**Uninstall keeps your settings.** `settings.json`, recent files and the saved session stay in
+`%APPDATA%\MD.Viewer`, so a reinstall starts where you left off. To wipe them deliberately:
+`mdview.exe --reset-settings`, or delete that folder. A “clean” reinstall is therefore just
+uninstall → install; the same settings come back.
+
 ## Silent use
 
 ```powershell

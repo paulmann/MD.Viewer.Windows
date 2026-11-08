@@ -12,7 +12,7 @@
 
 #define AppName        "MD Viewer"
 #ifndef AppVersion
-  #define AppVersion   "1.3.1"
+  #define AppVersion   "1.3.2"
 #endif
 #ifndef PayloadFile
   #define PayloadFile  "..\artifacts\publish\mdview.exe"
@@ -177,6 +177,13 @@ Type: filesandordirs; Name: "{app}\docs"
 Type: filesandordirs; Name: "{app}\samples"
 Type: dirifempty;     Name: "{app}"
 
+[InstallDelete]
+; An in-place upgrade keeps files that the new version no longer ships. These two
+; directories belong entirely to the product, so purging them is safe and keeps a
+; help page that was dropped in a later release from lingering forever.
+Type: filesandordirs; Name: "{app}\docs"
+Type: filesandordirs; Name: "{app}\samples"
+
 [Code]
 // Windows keeps a hashed per-user default (FileExts\.md\UserChoice) that an installer
 // cannot change. Saying that in a modal box in the middle of "Installing..." looks like a
@@ -213,4 +220,5 @@ begin
     RemoveAssociationIfOurs('.mdown');
   end;
 end;
+
 

@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] — 2026-11-09
+
+Upgrades now clean up after themselves, and the upgrade/uninstall behaviour is measured instead of
+assumed.
+
+### Fixed
+
+- **An in-place upgrade kept files the new version no longer ships.** `[InstallDelete]` now purges
+  `{app}\docs` and `{app}\samples` before copying. Verified with planted `docs\obsolete-page.md` and
+  `samples\old-sample.md`: both gone after upgrading 1.3.1 → 1.3.2.
+
+### Documented and verified
+
+- Upgrade 1.3.0 → 1.3.1 → 1.3.2: one Installed-apps entry (version updated, no duplicates), task
+  selection remembered, all four shortcuts kept, `%APPDATA%\MD.Viewer\settings.json` byte-identical
+  (same SHA-256), and the app starts with those very settings — dark theme, 125 % zoom, Source mode.
+- Uninstall leaves `%APPDATA%\MD.Viewer` alone, so settings survive removal and reinstall;
+  `--reset-settings` is the deliberate way to clear them. See docs/INSTALLER.md.
+
 ## [1.3.1] — 2026-11-09
 
 Two bugs found by installing and using the product, both visible in the first minute.
