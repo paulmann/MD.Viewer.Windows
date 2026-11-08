@@ -83,6 +83,9 @@ public sealed class LaunchOptions
     /// <summary>Development: write the application .ico and exit.</summary>
     public string? SaveIcon { get; set; }
 
+    /// <summary>Development: scroll the rendered view by N pixels before a screenshot.</summary>
+    public float? ScrollPixels { get; set; }
+
     public int ScreenshotDelay { get; set; } = 700;
 
     public List<string> Errors { get; } = [];
@@ -312,6 +315,14 @@ public sealed class LaunchOptions
                     options.UiDump = true;
                     break;
 
+                case "--scroll":
+                    if (float.TryParse(NextValue(), NumberStyles.Float, CultureInfo.InvariantCulture, out float scrollPixels))
+                    {
+                        options.ScrollPixels = scrollPixels;
+                    }
+
+                    break;
+
                 case "--save-icon":
                     options.SaveIcon = NextValue();
                     break;
@@ -426,6 +437,7 @@ public sealed class LaunchOptions
         return sb.ToString();
     }
 }
+
 
 
 

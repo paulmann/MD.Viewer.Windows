@@ -317,13 +317,18 @@ public sealed class DocumentView : Control
         GraphicsState state = g.Save();
         var clip = new RectangleF(0, 0, ClientSize.Width, ClientSize.Height);
         g.SetClip(clip);
-        g.TranslateTransform(sheet.Left + PaddingX, sheetTop);
 
-        Renderer.PaintContent(g, 0f, _hoverLink, _hoverControl);
+        // The scrolled offset is applied *inside* PaintContent, which is also where the
+        // viewport culling happens. Translating here as well would make the culling look
+        // at the wrong slice and leave everything below the first screen blank.
+        g.TranslateTransform(sheet.Left + PaddingX, 0f);
 
-        // search highlights
+        Renderer.PaintContent(g, _scroll.Value, _hoverLink, _hoverControl);
+
+        // search highlights live in layout coordinates, so they need the same offset
         if (_searchHits.Count > 0)
         {
+            g.TranslateTransform(0f, -_scroll.Value);
             for (int i = 0; i < _searchHits.Count; i++)
             {
                 bool current = i == _searchCurrent;
@@ -337,6 +342,8 @@ public sealed class DocumentView : Control
                     g.DrawRectangle(pen, hit.X, hit.Y, hit.Width, hit.Height);
                 }
             }
+
+            g.TranslateTransform(0f, _scroll.Value);
         }
 
         g.Restore(state);

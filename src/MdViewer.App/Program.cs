@@ -145,6 +145,11 @@ internal static partial class Program
             return 0;
         }
 
+        if (options.ScrollPixels is float scroll)
+        {
+            form.Shown += (_, _) => form.ScrollContent(scroll);
+        }
+
         if (options.UiDump)
         {
             form.Shown += (_, _) =>
@@ -305,6 +310,7 @@ internal sealed partial class ConsoleBridge : IDisposable
         }
     }
 }
+
 
 
 

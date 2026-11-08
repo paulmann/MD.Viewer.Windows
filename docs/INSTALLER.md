@@ -42,9 +42,10 @@ Finish page (checkboxes):
   the user can drag it to the taskbar once.
 * **The `.md` association** is written to `HKLM\Software\Classes`. If the user (or another app)
   already has a *personal* choice (`FileExts\.md\UserChoice`, hash-protected), Windows keeps it and
-  the installer cannot override it. In that case Setup shows a short note explaining where to change
-  it: Settings → Apps → Default apps → Choose defaults by file type → `.md`. The program is always
-  registered as an “Open with” candidate either way.
+  the installer cannot override it. When that is the case, the Finish page gets one extra line
+  pointing at Settings → Apps → Default apps → Choose defaults by file type. It is never a modal
+  dialog during the progress page: that reads as a failure and blocks the install.
+  The program is always registered as an “Open with” candidate either way.
 
 ## Silent use
 

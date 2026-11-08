@@ -12,7 +12,7 @@
 
 #define AppName        "MD Viewer"
 #ifndef AppVersion
-  #define AppVersion   "1.3.0"
+  #define AppVersion   "1.3.1"
 #endif
 #ifndef PayloadFile
   #define PayloadFile  "..\artifacts\publish\mdview.exe"
@@ -86,7 +86,7 @@ russian.ReadmeName=README.ru.md
 russian.RunApp=Запустить MD Viewer
 russian.OpenReadme=Открыть README.md
 russian.AssocDescription=Документ Markdown
-russian.UserChoiceHint=Windows уже хранит личный выбор программы для файлов .md. Ассоциация зарегистрирована, но если .md по-прежнему открывается другим приложением, выберите MD Viewer в «Параметры → Приложения → Приложения по умолчанию → По типу файла → .md». Windows 10/11 не позволяет установщику менять личный выбор автоматически.
+russian.UserChoiceHintShort=Файлы .md уже были связаны с другой программой — Windows сохраняет личный выбор пользователя. Чтобы открывать их этим просмотрщиком: Параметры → Приложения → Приложения по умолчанию → Выбор приложений по умолчанию по типу файла → .md.
 
 english.TaskGroupShortcuts=Shortcuts
 english.TaskGroupIntegration=Windows integration
@@ -101,7 +101,7 @@ english.ReadmeName=README.md
 english.RunApp=Launch MD Viewer
 english.OpenReadme=Open README.md
 english.AssocDescription=Markdown document
-english.UserChoiceHint=Windows already stores a per-user choice for .md files. The association is registered, but if .md still opens in another app, pick MD Viewer in Settings → Apps → Default apps → Choose defaults by file type → .md. Windows 10/11 does not let an installer change the personal choice.
+english.UserChoiceHintShort=Windows already keeps a personal default for .md files, and it wins over any installer. To open them with MD Viewer: Settings → Apps → Default apps → Choose defaults by file type → .md.
 
 [Tasks]
 Name: "startmenu";    Description: "{cm:TaskStartMenu}";    GroupDescription: "{cm:TaskGroupShortcuts}";   Flags: checkedonce
@@ -179,16 +179,15 @@ Type: dirifempty;     Name: "{app}"
 
 [Code]
 // Windows keeps a hashed per-user default (FileExts\.md\UserChoice) that an installer
-// cannot change. When it exists, tell the user how to switch — honestly and once.
-procedure CurStepChanged(CurStep: TSetupStep);
+// cannot change. Saying that in a modal box in the middle of "Installing..." looks like a
+// failure, so the note is appended to the Finish page instead — visible, not blocking.
+procedure CurPageChanged(CurPageID: Integer);
 begin
-  if CurStep = ssPostInstall then
+  if (CurPageID = wpFinished) and (not WizardSilent) and WizardIsTaskSelected('associate') then
   begin
-    if (not WizardSilent) and WizardIsTaskSelected('associate') then
-    begin
-      if RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.md\UserChoice') then
-        MsgBox(ExpandConstant('{cm:UserChoiceHint}'), mbInformation, MB_OK);
-    end;
+    if RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.md\UserChoice') then
+      WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10#13#10 +
+        ExpandConstant('{cm:UserChoiceHintShort}');
   end;
 end;
 
@@ -214,3 +213,4 @@ begin
     RemoveAssociationIfOurs('.mdown');
   end;
 end;
+

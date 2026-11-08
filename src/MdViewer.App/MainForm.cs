@@ -133,6 +133,7 @@ public sealed class MainForm : Form
             SelectedIndex = (int)_mode,
         };
         _modes.SelectedIndexChanged += (_, _) => SetMode((ViewMode)_modes.SelectedIndex);
+        _toolbar.Controls.Add(_modes);
 
         _tabs = new TabStrip { Visible = false };
         _tabs.TabSelected += (_, index) => ActivateSession(index);
@@ -1733,6 +1734,9 @@ public sealed class MainForm : Form
         }
     }
 
+    /// <summary>Development hook: positions the rendered view for a screenshot.</summary>
+    public void ScrollContent(float y) => _view.ScrollTo(y, animate: false);
+
     public void SetReadingWidth(float width)
     {
         _view.ReadingWidthOverride = Math.Clamp(width, 380f, 1600f);
@@ -1791,6 +1795,7 @@ public sealed class MainForm : Form
         return sb.ToString();
     }
 }
+
 
 
 

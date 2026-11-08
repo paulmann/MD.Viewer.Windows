@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] — 2026-11-09
+
+Two bugs found by installing and using the product, both visible in the first minute.
+
+### Fixed
+
+- **Scrolling past the first screen left the page blank.** `DocumentView` applied the scroll offset
+  twice — once as a transform and once inside `MarkdownRenderer.PaintContent`, which also does the
+  viewport culling. The culling then measured the wrong slice and stopped painting every block below
+  the first viewport. The offset is now applied in one place. Verified with captures at 0, 700, 1500
+  and 2400 px: 22 683 / 23 671 / 15 126 / 16 027 inked samples instead of an empty page.
+- **The three-mode switcher never appeared.** `ModeSwitcher` was created, themed and positioned but
+  never added to the toolbar's control collection, so Rendered / Source / Editor was invisible since
+  the first release (the shortcuts and the menu still worked). Now it is added and sits centred.
+- **The installer no longer shows a modal message during “Installing…”.** The per-user `.md` choice
+  note is appended to the Finish page instead of interrupting the progress page with a dialog that
+  looks like an error.
+
 ## [1.3.0] — 2026-11-09
 
 Installer, application icon, and the theme bug the owner hit.
