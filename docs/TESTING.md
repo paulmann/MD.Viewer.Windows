@@ -4,7 +4,7 @@
 pwsh -File build/build.ps1 -Task test     # everything below, exit code 0/1
 ```
 
-110 checks across six suites; the runner is a console executable (`mdview-tests.exe`) with no test
+121 checks across eight suites; the runner is a console executable (`mdview-tests.exe`) with no test
 framework dependency.
 
 | Suite | Checks | What it protects |
@@ -12,9 +12,12 @@ framework dependency.
 | `parser` | 63 | Every Markdown construct, front matter, footnotes, chains, entity decoding, statistics |
 | `layout` | 11 | Wrapping inside the column, anchors, link regions, tables filling the width, zoom, pathologies |
 | `theme` | 24 | WCAG contrast for every palette pair that carries text, in both themes |
-| `diagrams` | 6 | Flowchart parsing, shapes, labels, subgraphs, fallbacks |
+| `diagrams` | 15 | Flowchart parsing, shapes, labels, subgraphs, fallbacks, every type lays out |
 | `editor` | 4 | Insert/replace/selection, find hits, caret coordinates |
 | `print` | 2 | Pagination terminates and splits a long document |
+
+Mermaid is covered by its own suites inside `diagrams`: `mermaid: sequence`, `mermaid: pie`,
+`mermaid: class`, `mermaid: state`, `mermaid: gantt`, `mermaid: journey` and `mermaid: dispatch`.
 
 ## Tools in the test runner
 

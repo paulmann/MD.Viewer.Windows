@@ -39,9 +39,11 @@ public sealed class DiagramVisual : BlockLayout
 
     public required Flowchart Chart { get; init; }
 
-    public static DiagramVisual? Create(LayoutContext ctx, Flowchart chart, float left, float top, float width)
+    public bool IsState { get; init; }
+
+    public static DiagramVisual? Create(LayoutContext ctx, MdViewer.Core.Markdown.MermaidBlock source, Flowchart chart, bool isState, float left, float top, float width)
     {
-        var visual = new DiagramVisual { Source = new MdViewer.Core.Markdown.MermaidBlock { Source = string.Empty }, Ctx = ctx, Chart = chart };
+        var visual = new DiagramVisual { Source = source, Ctx = ctx, Chart = chart, IsState = isState };
         if (!visual.Build(left, top, width))
         {
             return null;
@@ -78,6 +80,11 @@ public sealed class DiagramVisual : BlockLayout
                     float diameter = MathF.Max(boxWidth, nodeHeight) + 10f * scale;
                     boxWidth = diameter;
                     nodeHeight = diameter;
+                    break;
+
+                case NodeShape.StartEnd:
+                    boxWidth = 13f * scale;
+                    nodeHeight = 13f * scale;
                     break;
                 case NodeShape.Stadium:
                     boxWidth += 10f * scale;
@@ -128,18 +135,13 @@ public sealed class DiagramVisual : BlockLayout
             }
         }
 
-        // ---- group
-        int layerCount = layer.Values.DefaultIfEmpty(0).Max() + 1;
-        var groups = new List<PlacedNode>[layerCount];
-        for (int i = 0; i < layerCount; i++)
-        {
-            groups[i] = [];
-        }
-
-        foreach (PlacedNode node in _nodes)
-        {
-            groups[layer[node.Node.Id]].Add(node);
-        }
+        // ---- group (only layers that actually contain nodes; a longest-path
+        // assignment can skip numbers when a chain jumps)
+        List<PlacedNode>[] groups = _nodes
+            .GroupBy(n => layer[n.Node.Id])
+            .OrderBy(g => g.Key)
+            .Select(g => g.ToList())
+            .ToArray();
 
         bool horizontal = Chart.LeftToRight;
         float gapAlong = 34f * scale;
@@ -211,7 +213,7 @@ public sealed class DiagramVisual : BlockLayout
                 box.Height * fit);
             node.Box = scaled;
 
-            string[] lines = node.Node.Label.Split('\n');
+            string[] lines = node.Node.Label.Length == 0 ? [] : node.Node.Label.Split('\n');
             float totalText = lines.Length * lineHeight * fit;
             float lineTop = scaled.Top + (scaled.Height - totalText) / 2f;
             foreach (string line in lines)
@@ -352,6 +354,10 @@ public sealed class DiagramVisual : BlockLayout
                 ctx.G.DrawEllipse(ctx.Pen(border, MathF.Max(1f, 1.2f * scale)), box);
                 break;
 
+            case NodeShape.StartEnd:
+                ctx.G.FillEllipse(ctx.Brush(Ctx.Colors.Text), box);
+                break;
+
             case NodeShape.Rectangle:
                 ctx.FillRound(box, 3f * scale, fill);
                 ctx.StrokeRound(box, 3f * scale, border, MathF.Max(1f, 1.2f * scale));
@@ -384,4 +390,6 @@ public sealed class DiagramVisual : BlockLayout
         ctx.G.FillPolygon(ctx.Brush(color), [tip, left, right]);
     }
 }
+
+
 

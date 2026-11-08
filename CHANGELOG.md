@@ -4,6 +4,40 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-11-09
+
+Mermaid grew from flowcharts to **seven diagram types**, all drawn natively by the same layout and
+paint pipeline as the rest of the document.
+
+### Added
+
+- **Sequence diagrams** (`sequenceDiagram`): participants and actors, lifelines, solid and dashed
+  arrows with filled/open heads, self-messages, `autonumber`, notes (`left of` / `right of` /
+  `over`), `loop` / `alt` / `opt` / `par` frames with labels and `else` dividers, `==` / `---`
+  dividers.
+- **Pie charts** (`pie`): title, slices with percentages inside the wedges, a legend, `showData`.
+- **Class diagrams** (`classDiagram`): class boxes with `<<annotation>>`, visibility sigils,
+  attributes and methods, and relations — inheritance, realization, composition, aggregation,
+  association, dependency — with labels and cardinalities.
+- **State diagrams** (`stateDiagram-v2`): states, labelled transitions, `[*]` start/end dots and
+  `state "…" as Id` aliases; composite states are flattened.
+- **Gantt charts** (`gantt`): sections, explicit dates with `dateFormat`, `Nd`/`Nw` durations,
+  `after` dependencies, milestones, `done` bars and a date axis with adaptive ticks.
+- **Journey charts** (`journey`): sections, tasks, 1…5 score dots and actors.
+- `samples/mermaid.md` — one page that exercises every supported diagram.
+
+### Changed
+
+- One dispatcher (`MermaidDiagrams`) chooses the parser by header. Unsupported types
+  (`erDiagram`, `gitGraph`, `mindmap`, `timeline`, `quadrantChart`, `sankey`, `xychart`, `C4`,
+  `block`) now say exactly that in the fallback card instead of a generic message.
+- `Flowchart.LeftToRight` is settable so a `direction` statement can switch a state diagram's axis.
+
+### Fixed
+
+- A layer with no nodes could crash the flowchart layout (`Sequence contains no elements`) when a
+  dependency chain skipped layer numbers.
+
 ## [1.0.0] — 2026-11-08
 
 First release. A native Markdown reader/editor for Windows with its own parser, layout engine and

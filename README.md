@@ -6,7 +6,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#requirements)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#what-it-deliberately-does-not-do)
-[![Tests](https://img.shields.io/badge/tests-110%20checks-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/tests-121%20checks-brightgreen)](docs/TESTING.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 
 **Read this in:** English · [Русский](README.ru.md)
@@ -99,10 +99,13 @@ gracefully, is in **[docs/MARKDOWN.md](docs/MARKDOWN.md)**.
 * Block quotes, GitHub alerts (`> [!NOTE]` … `> [!CAUTION]`), definition lists
 * Footnotes (reference and inline), `[TOC]`, YAML front matter, emoji shortcodes
 * Math: `$inline$` and `$$display$$` through a TeX-subset typesetter
-* Mermaid flowcharts (`graph TD/LR`) rendered natively — boxes, diamonds, arrows, edge labels;
-  anything else falls back to a readable source card with a diagnostic
+* Mermaid drawn natively — `flowchart`/`graph`, `sequenceDiagram`, `pie`, `classDiagram`,
+  `stateDiagram-v2`, `gantt` and `journey`; unsupported types fall back to a readable source card
+  with a diagnostic
 * Images resolved relative to the document, captions from alt text, graceful placeholder when a
   file is missing; links to other `.md` files open in a new tab
+
+![Mermaid sequence diagram and pie chart](docs/img/mermaid.png)
 
 Raw HTML in a document is **never executed** — it is shown as source in a labelled card. That is
 a security decision, not a missing feature.
@@ -186,7 +189,7 @@ real, not for show:
 ```powershell
 # .NET 11 SDK (C# 15) required — see docs/BUILD.md for the exact version and the
 # two environment quirks this workspace has.
-pwsh -File build/build.ps1 -Task test      # build + 110 checks
+pwsh -File build/build.ps1 -Task test      # build + 121 checks
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (self-contained)
 ```
 
@@ -209,8 +212,9 @@ samples/              Feature tour and a Russian typography sample
   A remote image is reported as "not loaded (offline viewer)" instead of being fetched.
 * **No HTML/JavaScript execution.** Documents cannot run code inside the viewer.
 * **No plugin system.** The feature set is the feature set.
-* **Mermaid is flowcharts only.** Sequence, class, gantt and pie diagrams show their source with a
-  clear note; a wrong diagram never breaks the page.
+* **Mermaid covers seven diagram types.** `erDiagram`, `gitGraph`, `mindmap`, `timeline`,
+  `quadrantChart`, `sankey`, `xychart`, `C4` and `block` show their source with a clear note; a
+  diagram that cannot be parsed never breaks the page.
 * **Math is a TeX subset**, not LaTeX: fractions, roots, sums, Greek letters, sub/superscripts.
   Unknown commands render as literal text rather than an error.
 
@@ -219,4 +223,6 @@ samples/              Feature tour and a Russian typography sample
 ## License
 
 PolyForm Noncommercial License 1.0.0 — see [LICENSE](LICENSE).
+
+
 

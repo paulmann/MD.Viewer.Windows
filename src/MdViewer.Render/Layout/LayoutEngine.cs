@@ -928,14 +928,24 @@ public sealed class LayoutEngine
 
     private BlockLayout LayoutMermaid(MermaidBlock block, float left, float width, ref float y)
     {
-        if (MdViewer.Core.Diagrams.MermaidFlowchart.TryParse(block.Source, out MdViewer.Core.Diagrams.Flowchart? chart, out string? error) && chart is not null)
+        if (MdViewer.Core.Diagrams.MermaidDiagrams.TryParse(block.Source, out MdViewer.Core.Diagrams.MermaidDiagram? model, out string? error) && model is not null)
         {
-            DiagramVisual? diagram = DiagramVisual.Create(_context, chart, left, y, width);
-            if (diagram is not null)
+            BlockLayout? graphic = model switch
             {
-                diagram.AnchorId = "diagram-" + y.ToString("0", CultureInfo.InvariantCulture);
-                y += diagram.Height;
-                return diagram;
+                MdViewer.Core.Diagrams.FlowchartDiagram flow => DiagramVisual.Create(_context, block, flow.Chart, flow.IsState, left, y, width),
+                MdViewer.Core.Diagrams.SequenceDiagram sequence => SequenceVisual.Create(_context, block, sequence, left, y, width),
+                MdViewer.Core.Diagrams.PieDiagram pie => PieVisual.Create(_context, block, pie, left, y, width),
+                MdViewer.Core.Diagrams.ClassDiagram classes => ClassVisual.Create(_context, block, classes, left, y, width),
+                MdViewer.Core.Diagrams.GanttDiagram gantt => GanttVisual.Create(_context, block, gantt, left, y, width),
+                MdViewer.Core.Diagrams.JourneyDiagram journey => JourneyVisual.Create(_context, block, journey, left, y, width),
+                _ => null,
+            };
+
+            if (graphic is not null)
+            {
+                graphic.AnchorId = "diagram-" + y.ToString("0", CultureInfo.InvariantCulture);
+                y += graphic.Height;
+                return graphic;
             }
         }
 
@@ -1006,6 +1016,8 @@ public sealed class LayoutEngine
         return visual;
     }
 }
+
+
 
 
 

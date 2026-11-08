@@ -7,7 +7,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#требования)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Зависимости](https://img.shields.io/badge/зависимости-ноль-brightgreen)](#чего-он-сознательно-не-делает)
-[![Тесты](https://img.shields.io/badge/тесты-110%20проверок-brightgreen)](docs/TESTING.md)
+[![Тесты](https://img.shields.io/badge/тесты-121%20проверка-brightgreen)](docs/TESTING.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 
 **Read this in:** [English](README.md) · Русский
@@ -98,8 +98,11 @@
 * Цитаты, врезки GitHub (`> [!NOTE]` … `> [!CAUTION]`), списки определений
 * Сноски (ссылочные и встроенные), `[TOC]`, YAML front matter, эмодзи-коды
 * Формулы: `$в строке$` и `$$блок$$` через наборщик подмножества TeX
-* Схемы Mermaid (`graph TD/LR`) рисуются нативно — прямоугольники, ромбы, стрелки, подписи;
-  остальные типы показываются исходником с пояснением, а не ломают страницу
+* Схемы Mermaid рисуются нативно — `flowchart`/`graph`, `sequenceDiagram`, `pie`, `classDiagram`,
+  `stateDiagram-v2`, `gantt` и `journey`; неподдерживаемые типы показываются исходником с
+  пояснением, а не ломают страницу
+
+![Диаграмма последовательности и круговая диаграмма Mermaid](docs/img/mermaid.png)
 
 Сырой HTML **никогда не исполняется** — он показывается исходником в отдельной карточке. Это
 решение по безопасности, а не недостаток.
@@ -175,7 +178,7 @@ Ctrl+\ оглавление · Ctrl+Shift+P просмотр в редактор
 
 ```powershell
 # нужен .NET 11 SDK (C# 15) — точная версия и две ловушки окружения в docs/BUILD.md
-pwsh -File build/build.ps1 -Task test      # сборка + 110 проверок
+pwsh -File build/build.ps1 -Task test      # сборка + 121 проверка
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (самодостаточный)
 ```
 
@@ -198,8 +201,9 @@ samples/              экскурсия по функциям и образец
   Внешняя картинка помечается как «не загружена (офлайн)», а не скачивается.
 * **Не исполняет HTML и JavaScript.** Документ не может запустить код внутри просмотрщика.
 * **Нет плагинов.** Набор функций — это набор функций.
-* **Mermaid — только блок-схемы.** Sequence, class, gantt и pie показывают исходник с пояснением;
-  непонятая схема никогда не ломает страницу.
+* **Mermaid покрывает семь типов.** `erDiagram`, `gitGraph`, `mindmap`, `timeline`, `quadrantChart`,
+  `sankey`, `xychart`, `C4` и `block` показывают исходник с пояснением; непонятая схема никогда не
+  ломает страницу.
 * **Математика — подмножество TeX**, а не LaTeX: дроби, корни, суммы, греческие буквы, индексы.
   Неизвестные команды выводятся как текст, а не как ошибка.
 
@@ -208,3 +212,5 @@ samples/              экскурсия по функциям и образец
 ## Лицензия
 
 PolyForm Noncommercial License 1.0.0 — см. [LICENSE](LICENSE).
+
+

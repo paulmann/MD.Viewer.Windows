@@ -9,6 +9,9 @@ public enum NodeShape
     Stadium,
     Diamond,
     Circle,
+
+    /// <summary>Start/end dot used by state diagrams.</summary>
+    StartEnd,
 }
 
 public sealed class FlowNode(string id, string label, NodeShape shape)
@@ -33,7 +36,7 @@ public sealed class FlowEdge(string from, string to, string? label, bool dashed)
 
 public sealed class Flowchart
 {
-    public bool LeftToRight { get; init; }
+    public bool LeftToRight { get; set; }
 
     public List<FlowNode> Nodes { get; } = [];
 
@@ -321,3 +324,5 @@ public static class MermaidFlowchart
              .Replace("<br>", "\n", StringComparison.OrdinalIgnoreCase)
              .Replace("\\n", "\n", StringComparison.Ordinal);
 }
+
+

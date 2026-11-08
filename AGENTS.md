@@ -55,7 +55,7 @@ Test runner details: `mdview-tests.exe --snapshot <md> <png>`, `--report <md>`, 
 | --- | --- |
 | `src/MdViewer.Core/Markdown` | `SourceText`, `BlockParser`, `InlineParser`, AST, front matter, emoji, slugs |
 | `src/MdViewer.Core/Highlighting` | Line tokenizer and ~20 language families |
-| `src/MdViewer.Core/Diagrams` | Mermaid flowchart parser |
+| `src/MdViewer.Core/Diagrams` | Mermaid parsers: flowchart/state, sequence, pie, class, gantt, journey — and the `MermaidDiagrams` dispatcher |
 | `src/MdViewer.Core/Export` | Standalone HTML and plain-text exporters |
 | `src/MdViewer.Render/Theming` | Palettes, type scale, metrics |
 | `src/MdViewer.Render/Text` | Font book, run model, inline shaper, TeX-to-Unicode |
@@ -71,6 +71,11 @@ Test runner details: `mdview-tests.exe --snapshot <md> <png>`, `--report <md>`, 
 * **A new theme**: add a `Palette` in `ThemeCatalog`, extend `ThemeTests` with the pairs that carry
   text, then let `MarkdownRenderer.SetTheme` do the rest.
 * **A new CLI switch**: `Cli.cs` (parse + help text), consume it in `Program.cs` or `MainForm`.
+* **A new diagram type**: a parser in `MdViewer.Core/Diagrams` returning a model derived from
+  `MermaidDiagram`, a case in `MermaidDiagrams.TryParse`, a painter in `MdViewer.Render/Layout`
+  with a `Create(...)` factory, a case in `LayoutEngine.LayoutMermaid`, then a parser test, a
+  layout test and a line in `docs/MARKDOWN.md`. Never let a bad diagram throw — fall back to
+  `MermaidVisual` with the parser's reason.
 * **A new string**: `Localization.cs`, both arms, then use `L.T("key")`.
 
 ## Performance notes

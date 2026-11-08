@@ -83,7 +83,7 @@ Plain text blocks stay plain — no highlighting guesses.
 | Tables | yes | alignment per column |
 | Footnotes | yes | with back-links |
 | Math | yes[^math] | TeX subset |
-| Diagrams | partial | Mermaid source shown |
+| Diagrams | yes | 7 Mermaid types, drawn natively |
 
 ## Quotes and callouts
 
@@ -141,3 +141,4 @@ own paragraphs, links and emphasis.[^two]
 
 That is the whole tour. Open your own file with `Ctrl+O`, or drag one onto the
 window.
+

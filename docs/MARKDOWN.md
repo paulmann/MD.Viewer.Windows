@@ -24,8 +24,15 @@ broken; **source** — shown as text in a labelled card.
 | `Term` + `: Definition` | Definition list | full |
 | `[TOC]` | Inline table of contents built from headings | full |
 | `$$ … $$` | Display math | full |
-| ` ```mermaid ` with `graph TD/LR` | Native flowchart drawing | full |
-| ` ```mermaid ` with other diagram types | Source card labelled "MERMAID" | graceful |
+| ` ```mermaid ` with `graph` / `flowchart` | Native flowchart: boxes, diamonds, arrows, edge labels | full |
+| ` ```mermaid ` with `sequenceDiagram` | Participants, lifelines, solid/dashed arrows, self-messages, notes, `loop`/`alt` frames, `autonumber` | full |
+| ` ```mermaid ` with `pie` | Pie chart with legend, percentages, optional `showData` values | full |
+| ` ```mermaid ` with `classDiagram` | Class boxes with annotation, members, typed relations, cardinalities | full |
+| ` ```mermaid ` with `stateDiagram-v2` | States, transitions with labels, `[*]` start/end dots | full |
+| ` ```mermaid ` with `gantt` | Sections, bars, milestones, `after` dependencies, date axis | full |
+| ` ```mermaid ` with `journey` | Sections, tasks, 1…5 score dots, actors | full |
+| ` ```mermaid ` with `erDiagram`, `gitGraph`, `mindmap`, `timeline`, `quadrantChart`, `sankey`, `xychart`, `C4`, `block` | Source card labelled "MERMAID · … NOT SUPPORTED YET" | graceful |
+| ` ```mermaid ` that fails to parse | Source card with the parser's reason | graceful |
 | `<div>…</div>` and other raw HTML | Labelled "RAW HTML · NOT RENDERED" card | source |
 | YAML front matter | Parsed into title/description/tags/author/date/draft/toc/numbering | full (not drawn as a block) |
 | Footnotes `[^1]: …` | Collected at the bottom with numbers | full |
@@ -75,7 +82,9 @@ Anything else renders as plain monospace text — never an error.
 
 ## Known gaps
 
-* Mermaid: sequence, class, state, gantt, pie and ER diagrams show source.
+* Mermaid: `erDiagram`, `gitGraph`, `mindmap`, `timeline`, `quadrantChart`, `sankey`, `xychart`,
+  `C4` and `block` diagrams show source. Sequence frames (`loop`/`alt`/`opt`) are drawn as labelled
+  bands; `activate`/`deactivate` and colour boxes are ignored because they do not change meaning.
 * Math: no matrices, `\begin{}` environments, or multi-line alignment; unknown commands pass
   through as text.
 * Emoji: unknown codes pass through; the table covers the common ~300.
