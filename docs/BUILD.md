@@ -45,6 +45,23 @@ Remove-Item Env:DOTNET_ROOT -ErrorAction SilentlyContinue
 Start-Process .\artifacts\publish\mdview.exe -ArgumentList '--version' -Wait -NoNewWindow
 ```
 
+## Why the exe is 50 MB
+
+The build is **self-contained**: the .NET runtime and the Windows Desktop framework live inside
+`mdview.exe`, so no machine needs .NET installed (Windows only ships .NET Framework 4.8, not
+.NET 8/10/11).
+
+| Build | Size | Needs .NET installed |
+| --- | ---: | :---: |
+| `dotnet build` output (`src/MdViewer.App/bin/Release/net11.0-windows/mdview.exe`) | 74 752 B | yes |
+| `-Task publish` (`artifacts/publish/mdview.exe`) | 52 497 132 B | **no** |
+
+The runtime inside the single file is compressed (`EnableCompressionInSingleFile`), which is why a
+plain text search does not find `coreclr.dll`; the assembly names (`System.Private.CoreLib`,
+`Microsoft.WindowsDesktop.App`) are still visible. Verified by running the published file with
+`dotnet` removed from `PATH` and `DOTNET_ROOT` unset: `--version`, `--export html` and the GUI all
+work.
+
 ## Environment traps (this workspace)
 
 1. **`dotnet` on PATH is not an SDK.** It is a runtime-only copy shipped with the host app;

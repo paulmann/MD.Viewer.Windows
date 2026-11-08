@@ -32,8 +32,8 @@ internal static partial class Program
         if (options.Version)
         {
             using var bridge = new ConsoleBridge();
-            Console.WriteLine("MD Viewer " + (typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0"));
-            Console.WriteLine(RuntimeInformation.FrameworkDescription);
+            Console.WriteLine("MD Viewer " + (typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.2.1"));
+            Console.WriteLine(RuntimeInformation.FrameworkDescription + "  (embedded; no .NET installation required)");
             return 0;
         }
 

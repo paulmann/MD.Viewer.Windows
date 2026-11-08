@@ -48,6 +48,11 @@ light and dark mode without a single web asset.
   Visual C++ redistributable, no fonts to install (it uses Segoe UI / Consolas / Cambria, which
   ship with Windows).
 
+That matters because Windows itself carries only **.NET Framework 4.8** — it does not include
+.NET 8, 10 or 11, and .NET 11 is still a release candidate. A runtime-dependent build would not
+start on a clean machine; this one carries its own runtime: of the 52.5 MB file, roughly 50 MB is
+that runtime and 74 KB is the application itself (`src/MdViewer.App/bin/.../mdview.exe`).
+
 ---
 
 ## Quick start

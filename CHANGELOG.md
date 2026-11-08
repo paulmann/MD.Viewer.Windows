@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] — 2026-11-09
+
+Nothing about the runtime changed — only the wording that made it look like a requirement.
+
+### Changed
+
+- The About page printed a bare `.NET 11` next to the version, which read as "requires .NET 11".
+  It now has separate rows: **Version** (`1.2.1 · C# 15`) and **Runtime**
+  (`11.0.0-rc.3 · embedded in the exe, nothing to install`).
+- `--version` and `--diagnostics` say the same thing explicitly: the runtime is embedded and no
+  .NET installation is required.
+
+### Documentation
+
+- Requirements explain that Windows carries only .NET Framework 4.8 — not .NET 8/10/11 — and give
+  the measurement: 52.5 MB published file versus a 74 KB framework-dependent build, i.e. ~50 MB is
+  the embedded runtime.
+
 ## [1.2.0] — 2026-11-09
 
 Markdown coverage closed against the audit, and an About page that names its author.

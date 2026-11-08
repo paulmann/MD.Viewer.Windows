@@ -39,7 +39,7 @@ public sealed class AboutDialog : Form
         ShowInTaskbar = false;
         BackColor = theme.Colors.Surface;
         ForeColor = theme.Colors.Text;
-        ClientSize = new Size((int)S(660f), (int)S(500f));
+        ClientSize = new Size((int)S(660f), (int)S(520f));
 
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
         Icon = AppIcon.Create();
@@ -53,7 +53,17 @@ public sealed class AboutDialog : Form
 
     private Font Ui(float size, FontStyle style = FontStyle.Regular) => _fonts.UiFont(size * _theme.Scale, style);
 
-    private static string Version => typeof(AboutDialog).Assembly.GetName().Version?.ToString(3) ?? "1.1.0";
+    private static string Version => typeof(AboutDialog).Assembly.GetName().Version?.ToString(3) ?? "1.2.1";
+
+    /// <summary>The runtime this build carries inside the file, e.g. "11.0.0-rc.3".</summary>
+    private static string RuntimeShort()
+    {
+        string description = RuntimeInformation.FrameworkDescription
+            .Replace(".NET ", string.Empty, StringComparison.Ordinal)
+            .Replace("Microsoft.NETCore.App ", string.Empty, StringComparison.Ordinal);
+        string[] parts = description.Split('.');
+        return parts.Length >= 4 ? string.Join('.', parts.Take(4)) : description;
+    }
 
     protected override void OnPaint(PaintEventArgs e)
     {
@@ -81,12 +91,13 @@ public sealed class AboutDialog : Form
         y += S(62f);
 
         // product card
-        var card = new RectangleF(margin, y, ClientSize.Width - margin * 2f, S(126f));
+        var card = new RectangleF(margin, y, ClientSize.Width - margin * 2f, S(150f));
         FillCard(g, card);
 
         float rowTop = card.Top + S(14f);
         float labelWidth = S(92f);
-        DrawRow(g, card.Left + S(16f), ref rowTop, labelWidth, L.T("about.version"), $"{Version}  ·  .NET {Environment.Version}  ·  C# 15");
+        DrawRow(g, card.Left + S(16f), ref rowTop, labelWidth, L.T("about.version"), $"{Version}  ·  C# 15");
+        DrawRow(g, card.Left + S(16f), ref rowTop, labelWidth, L.T("about.runtime"), $"{RuntimeShort()}  ·  {L.T("about.embedded")}");
         DrawRow(g, card.Left + S(16f), ref rowTop, labelWidth, L.T("about.license"), "PolyForm Noncommercial 1.0.0", LicenseUrl, "license");
         DrawRow(g, card.Left + S(16f), ref rowTop, labelWidth, L.T("about.author"), $"{AuthorName}  <{AuthorEmail}>", AuthorSite, "site");
         DrawRow(g, card.Left + S(16f), ref rowTop, labelWidth, L.T("about.build"), L.T("about.buildValue"));
@@ -340,8 +351,8 @@ internal static class Diagnostics
     public static string Text()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("MD Viewer " + (typeof(Diagnostics).Assembly.GetName().Version?.ToString(3) ?? "1.1.0"));
-        sb.AppendLine(RuntimeInformation.FrameworkDescription);
+        sb.AppendLine("MD Viewer " + (typeof(Diagnostics).Assembly.GetName().Version?.ToString(3) ?? "1.2.1"));
+        sb.AppendLine(RuntimeInformation.FrameworkDescription + "  (self-contained: the runtime is embedded, no .NET installation required)");
         sb.AppendLine(RuntimeInformation.OSDescription + " (" + RuntimeInformation.OSArchitecture + ")");
         sb.AppendLine("64-bit process: " + Environment.Is64BitProcess);
         sb.AppendLine("System dark: " + ThemeCatalog.SystemPrefersDark());
