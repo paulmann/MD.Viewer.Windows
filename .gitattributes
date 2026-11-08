@@ -1,0 +1,18 @@
+* text=auto eol=lf
+
+*.cs text
+*.csproj text
+*.slnx text
+*.props text
+*.md text
+*.json text
+*.ps1 text
+*.py text
+*.yml text
+*.manifest text
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.exe binary
+*.zip binary

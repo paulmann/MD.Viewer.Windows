@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);WFO1000;WFO5001;WFO5002</NoWarn>
+    <RootNamespace>MdViewer.Tests</RootNamespace>
+    <AssemblyName>mdview-tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MdViewer.Core\MdViewer.Core.csproj" />
+    <ProjectReference Include="..\MdViewer.Render\MdViewer.Render.csproj" />
+    <ProjectReference Include="..\MdViewer.App\MdViewer.App.csproj" />
+  </ItemGroup>
+
+</Project>
+

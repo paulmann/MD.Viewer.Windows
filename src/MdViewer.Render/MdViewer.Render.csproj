@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>MdViewer.Render</RootNamespace>
+    <AssemblyName>MdViewer.Render</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MdViewer.Core\MdViewer.Core.csproj" />
+  </ItemGroup>
+
+</Project>

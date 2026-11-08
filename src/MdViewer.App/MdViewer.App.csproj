@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>MdViewer.App</RootNamespace>
+    <AssemblyName>mdview</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
+    <ApplicationDefaultFont>Segoe UI, 9pt</ApplicationDefaultFont>
+    <TrimMode>partial</TrimMode>
+    <IsTrimmable>false</IsTrimmable>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);WFO1000;WFO5001;WFO5002</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MdViewer.Core\MdViewer.Core.csproj" />
+    <ProjectReference Include="..\MdViewer.Render\MdViewer.Render.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="app.manifest" />
+  </ItemGroup>
+
+</Project>
+
+
+

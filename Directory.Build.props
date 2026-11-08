@@ -1,0 +1,35 @@
+<Project>
+
+  <!--
+    MD.Viewer.Windows — common build properties.
+    Toolchain: .NET 11 (C# 15). See docs/BUILD.md.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net11.0-windows</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <Product>MD Viewer</Product>
+    <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace Condition="'$(RootNamespace)' == ''">$(MSBuildProjectName)</RootNamespace>
+    <Company>Mikhail Deynekin</Company>
+    <Authors>Mikhail Deynekin</Authors>
+    <Copyright>Copyright © 2026 Mikhail Deynekin</Copyright>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <Version Condition="'$(Version)' == ''">1.0.0</Version>
+
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <NoWarn>$(NoWarn);CA1416;CS1591</NoWarn>
+
+    <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

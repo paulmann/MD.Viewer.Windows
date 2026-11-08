@@ -1,0 +1,18 @@
+# Build output
+bin/
+obj/
+artifacts/
+publish/
+*.user
+*.suo
+.vs/
+
+# Local tooling
+.nuget/
+_tools/
+*.log
+*.binlog
+
+# Test scratch
+tests-out/
+screenshots/*.tmp.png
