@@ -1,8 +1,9 @@
 # Installer
 
-`MD.Viewer-1.3.0-setup.exe` — one file, **34.8 MB**, built with Inno Setup 6.7.4. It installs the
-same self-contained `mdview.exe` (no .NET needed) and adds everything Windows expects from a
-desktop application.
+`MD.Viewer-1.3.0-setup.exe` — one file, **34.8 MB**, published as a release asset
+(**[latest release](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)**) and built with
+Inno Setup 6.7.4. It installs the same self-contained `mdview.exe` (no .NET needed) and adds
+everything Windows expects from a desktop application.
 
 ## What it does
 

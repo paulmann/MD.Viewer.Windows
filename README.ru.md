@@ -9,6 +9,9 @@
 [![Зависимости](https://img.shields.io/badge/зависимости-ноль-brightgreen)](#чего-он-сознательно-не-делает)
 [![Тесты](https://img.shields.io/badge/тесты-144%20проверки-brightgreen)](docs/TESTING.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
+[![Релиз](https://img.shields.io/github/v/release/paulmann/MD.Viewer.Windows?label=%D1%80%D0%B5%D0%BB%D0%B8%D0%B7)](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)
+
+📥 **[Скачать для Windows](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)** — установщик 34,8 МБ · портативный exe 50 МБ
 
 **Read this in:** [English](README.md) · Русский
 

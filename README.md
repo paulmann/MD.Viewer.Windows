@@ -8,6 +8,9 @@
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#what-it-deliberately-does-not-do)
 [![Tests](https://img.shields.io/badge/tests-144%20checks-brightgreen)](docs/TESTING.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/paulmann/MD.Viewer.Windows?label=release)](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)
+
+📥 **[Download for Windows](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)** — installer 34.8 MB · portable exe 50 MB
 
 **Read this in:** English · [Русский](README.ru.md)
 
