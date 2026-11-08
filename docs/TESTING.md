@@ -4,20 +4,22 @@
 pwsh -File build/build.ps1 -Task test     # everything below, exit code 0/1
 ```
 
-121 checks across eight suites; the runner is a console executable (`mdview-tests.exe`) with no test
+144 checks across ten suites; the runner is a console executable (`mdview-tests.exe`) with no test
 framework dependency.
 
 | Suite | Checks | What it protects |
 | --- | --- | --- |
-| `parser` | 63 | Every Markdown construct, front matter, footnotes, chains, entity decoding, statistics |
-| `layout` | 11 | Wrapping inside the column, anchors, link regions, tables filling the width, zoom, pathologies |
-| `theme` | 24 | WCAG contrast for every palette pair that carries text, in both themes |
-| `diagrams` | 15 | Flowchart parsing, shapes, labels, subgraphs, fallbacks, every type lays out |
+| `parser` (12 sub-suites) | 65 | Every Markdown construct, front matter, footnotes, chains, entities, statistics |
+| `layout` | 11 | Wrapping, anchors, link regions, tables, zoom, pathological input |
+| `theme` | 23 | WCAG contrast for every palette pair that carries text, both themes |
+| `diagrams` + `mermaid:*` | 17 | Flowchart and six more diagram types, shapes, labels, dispatch, fallbacks |
 | `editor` | 4 | Insert/replace/selection, find hits, caret coordinates |
+| `extras` | 22 | Emphasis corners, reference links, definition lists, typography, line breaks, glossary, images |
+| `glossary hover` | 3 | Term hit-testing on the real document view |
 | `print` | 2 | Pagination terminates and splits a long document |
 
-Mermaid is covered by its own suites inside `diagrams`: `mermaid: sequence`, `mermaid: pie`,
-`mermaid: class`, `mermaid: state`, `mermaid: gantt`, `mermaid: journey` and `mermaid: dispatch`.
+The runner prints the per-suite tally at the end of every run, so the numbers above cannot drift
+silently from the code.
 
 ## Tools in the test runner
 

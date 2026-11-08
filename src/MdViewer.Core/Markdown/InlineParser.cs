@@ -93,7 +93,13 @@ public sealed class InlineParser(MarkdownOptions options, IReadOnlyDictionary<st
                 return;
             }
 
-            nodes.Add(new TextInline(Entities.Decode(chunk)));
+            string decoded = Entities.Decode(chunk);
+            if (options.SmartPunctuation)
+            {
+                decoded = SmartTypography.Apply(decoded);
+            }
+
+            nodes.Add(new TextInline(decoded));
         }
 
         while (i < s.Length)
@@ -455,7 +461,7 @@ public sealed class InlineParser(MarkdownOptions options, IReadOnlyDictionary<st
             }
 
             int run = CountRun(s, j, marker);
-            if (run < need)
+            if (run != need)
             {
                 j += run - 1;
                 continue;
@@ -1215,4 +1221,5 @@ public sealed class InlineParser(MarkdownOptions options, IReadOnlyDictionary<st
         }
     }
 }
+
 

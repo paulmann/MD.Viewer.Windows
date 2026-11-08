@@ -7,7 +7,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#требования)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Зависимости](https://img.shields.io/badge/зависимости-ноль-brightgreen)](#чего-он-сознательно-не-делает)
-[![Тесты](https://img.shields.io/badge/тесты-121%20проверка-brightgreen)](docs/TESTING.md)
+[![Тесты](https://img.shields.io/badge/тесты-144%20проверки-brightgreen)](docs/TESTING.md)
 [![Лицензия](https://img.shields.io/badge/лицензия-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 
 **Read this in:** [English](README.md) · Русский
@@ -101,6 +101,8 @@
 * Схемы Mermaid рисуются нативно — `flowchart`/`graph`, `sequenceDiagram`, `pie`, `classDiagram`,
   `stateDiagram-v2`, `gantt` и `journey`; неподдерживаемые типы показываются исходником с
   пояснением, а не ломают страницу
+* Таблицы из двух колонок работают как **глоссарий**: наведение на термин в тексте показывает определение
+* Необязательные типографские замены (`--`, `---`, `...`) и переключатель переноса по одиночному Enter
 
 ![Диаграмма последовательности и круговая диаграмма Mermaid](docs/img/mermaid.png)
 
@@ -178,7 +180,7 @@ Ctrl+\ оглавление · Ctrl+Shift+P просмотр в редактор
 
 ```powershell
 # нужен .NET 11 SDK (C# 15) — точная версия и две ловушки окружения в docs/BUILD.md
-pwsh -File build/build.ps1 -Task test      # сборка + 121 проверка
+pwsh -File build/build.ps1 -Task test      # сборка + 144 проверки
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (самодостаточный)
 ```
 
@@ -209,8 +211,16 @@ samples/              экскурсия по функциям и образец
 
 ---
 
+## Автор
+
+**Михаил Дейнекин** — [Deynekin.com](https://Deynekin.com) · [github.com/paulmann](https://github.com/paulmann) · <Mikhail@Deynekin.com>
+
+![О программе](docs/img/about.png)
+
 ## Лицензия
 
 PolyForm Noncommercial License 1.0.0 — см. [LICENSE](LICENSE).
+
+
 
 

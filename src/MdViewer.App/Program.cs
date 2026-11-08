@@ -117,6 +117,28 @@ internal static partial class Program
             form.Shown += (_, _) => form.BeginInvoke(form.PrintCurrentDocument);
         }
 
+        if (options.AboutShot is { Length: > 0 } aboutShot)
+        {
+            var about = new AboutDialog(ThemeCatalog.Resolve(settings.Theme).WithScale(settings.Zoom));
+            var timer = new System.Windows.Forms.Timer { Interval = 600 };
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop();
+                try
+                {
+                    WindowCapture.Save(about, aboutShot, clientOnly: true);
+                    Console.WriteLine("about: " + aboutShot);
+                }
+                finally
+                {
+                    about.Close();
+                }
+            };
+            about.Shown += (_, _) => timer.Start();
+            Application.Run(about);
+            return 0;
+        }
+
         if (options.UiDump)
         {
             form.Shown += (_, _) =>
@@ -232,29 +254,7 @@ internal static partial class Program
         }
     }
 
-    private static void PrintDiagnostics()
-    {
-        Console.WriteLine("MD Viewer " + (typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0"));
-        Console.WriteLine(RuntimeInformation.FrameworkDescription);
-        Console.WriteLine(RuntimeInformation.OSDescription + " (" + RuntimeInformation.OSArchitecture + ")");
-        Console.WriteLine("64-bit process: " + Environment.Is64BitProcess);
-        Console.WriteLine("DPI: " + GetDpi());
-
-        using var fonts = new MdViewer.Render.Text.FontBook(1f);
-        Console.WriteLine("UI font     : " + fonts.UiFamily);
-        Console.WriteLine("Display font: " + fonts.DisplayFamily);
-        Console.WriteLine("Mono font   : " + fonts.MonoFamily);
-        Console.WriteLine("Serif font  : " + fonts.SerifFamily);
-        Console.WriteLine("System dark : " + ThemeCatalog.SystemPrefersDark());
-        Console.WriteLine("Settings    : " + AppSettings.SettingsDirectory);
-        Console.WriteLine("Emoji codes : " + Emoji.Count);
-    }
-
-    private static string GetDpi()
-    {
-        using var form = new Form();
-        return form.DeviceDpi.ToString(CultureInfo.InvariantCulture);
-    }
+    private static void PrintDiagnostics() => Console.WriteLine(Diagnostics.Text());
 
     private static int ExportHeadless(LaunchOptions options, string format)
     {
@@ -360,3 +360,5 @@ internal sealed partial class ConsoleBridge : IDisposable
         }
     }
 }
+
+

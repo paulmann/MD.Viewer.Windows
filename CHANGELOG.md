@@ -4,6 +4,39 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-11-09
+
+Markdown coverage closed against the audit, and an About page that names its author.
+
+### Added
+
+- **About page** with product card (version, licence, author, build), links to the repository,
+  licence and documentation, a diagnostics button, and the credit/privacy lines — the same shape
+  as the TrayIconGuard About page, with this repository and product name.
+- **Glossary tooltips**: any two-column table feeds a glossary; hovering the term in the body shows
+  a floating definition card. `Term (ABBR)` registers the abbreviation and the long form too.
+- **Smart punctuation**, now implemented behind a View switch: `--`/`---`/`...`, `(c)/(r)/(tm)`,
+  `!=`, `<=`, `>=`, `+-`. Code spans and code blocks are never touched.
+- **Single-newline switch** in View: legacy behaviour (on) versus classic CommonMark paragraph flow.
+- **Clickable images**: clicking a picture opens the file in the default viewer.
+- `--about-shot <png>` for the screenshot suite.
+
+### Fixed
+
+- **Hard line breaks** (two trailing spaces or `\`) were destroyed by the block parser trimming line
+  ends — now preserved.
+- **Emphasis** no longer closes on a delimiter run of the wrong length: `*a **b** c*` renders as
+  emphasis around strong, not two broken fragments.
+- **Link reference definitions** may be indented up to three spaces and may carry their title on the
+  next line.
+- **Definition lists** support several terms per block and several definitions per term.
+- A layer with no nodes could crash the flowchart layout (`Sequence contains no elements`).
+
+### Changed
+
+- Unsupported Mermaid types name themselves in the fallback card.
+- The test runner prints a per-suite tally, so documentation numbers cannot drift from the code.
+
 ## [1.1.0] — 2026-11-09
 
 Mermaid grew from flowcharts to **seven diagram types**, all drawn natively by the same layout and

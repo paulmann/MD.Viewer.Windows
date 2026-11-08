@@ -25,6 +25,12 @@ public sealed class AppSettings
 
     public bool Numbering { get; set; }
 
+    /// <summary>A single newline inside a paragraph starts a new line (MD.Viewer legacy).</summary>
+    public bool LineBreaks { get; set; } = true;
+
+    /// <summary>Dashes, ellipsis and (c)/(r)/(tm) become typographic symbols.</summary>
+    public bool SmartPunctuation { get; set; }
+
     public bool EditorPreview { get; set; }
 
     public bool Watch { get; set; } = true;
@@ -145,6 +151,8 @@ public sealed class AppSettings
         LineNumbers = false;
         WrapCode = true;
         Numbering = false;
+        LineBreaks = true;
+        SmartPunctuation = false;
         EditorPreview = false;
         Watch = true;
         Recent.Clear();
@@ -157,5 +165,6 @@ public sealed class AppSettings
         Maximized = false;
     }
 }
+
 
 

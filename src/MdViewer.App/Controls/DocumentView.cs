@@ -25,6 +25,11 @@ public sealed class DocumentView : Control
     private int _searchCurrent = -1;
     private bool _draggingScrollbar;
     private float _dragOffset;
+    private Dictionary<string, string> _glossary = new(StringComparer.CurrentCultureIgnoreCase);
+    private List<string> _terms = [];
+    private string? _tipTerm;
+    private string? _tipText;
+    private Point _tipAt;
 
     public DocumentView()
     {
@@ -135,6 +140,102 @@ public sealed class DocumentView : Control
         Invalidate();
     }
 
+    /// <summary>Terms from two-column tables: hovering them shows the definition.</summary>
+    public void SetGlossary(IReadOnlyDictionary<string, string> glossary)
+    {
+        _glossary = new Dictionary<string, string>(glossary, StringComparer.CurrentCultureIgnoreCase);
+        _terms = [.. _glossary.Keys.OrderByDescending(k => k.Length)];
+        _tipTerm = null;
+        _tipText = null;
+        Invalidate();
+    }
+
+    /// <summary>Diagnostics/test hook: definition of the glossary term under a content point.</summary>
+    public string? ProbeGlossary(PointF content) =>
+        Renderer?.Layout is null ? null : FindGlossaryAt(Renderer.Layout, content);
+
+    private void ClearTip()
+    {
+        if (_tipTerm is null && _tipText is null)
+        {
+            return;
+        }
+
+        _tipTerm = null;
+        _tipText = null;
+        Invalidate();
+    }
+
+    /// <summary>Finds a glossary term under the point (case-insensitive, multi-word aware).</summary>
+    private string? FindGlossaryAt(DocumentLayout layout, PointF content)
+    {
+        if (_terms.Count == 0 || layout.FindBlock(content.Y) is not TextVisual text)
+        {
+            return null;
+        }
+
+        float y = text.Top;
+        foreach (ShapedLine line in text.Lines)
+        {
+            if (content.Y < y || content.Y > y + line.Height)
+            {
+                y += line.Height;
+                continue;
+            }
+
+            var builder = new System.Text.StringBuilder();
+            var spans = new List<(int Start, int Length, Run Run)>(line.Runs.Count);
+            foreach (Run run in line.Runs)
+            {
+                spans.Add((builder.Length, run.Text.Length, run));
+                builder.Append(run.Text);
+            }
+
+            string lineText = builder.ToString();
+            float localX = content.X - text.Left;
+
+            foreach (string term in _terms)
+            {
+                int index = 0;
+                while (index <= lineText.Length - term.Length)
+                {
+                    int found = lineText.IndexOf(term, index, StringComparison.CurrentCultureIgnoreCase);
+                    if (found < 0)
+                    {
+                        break;
+                    }
+
+                    float x1 = XInLine(spans, found);
+                    float x2 = XInLine(spans, found + term.Length);
+                    if (localX >= x1 && localX <= x2)
+                    {
+                        return _glossary.TryGetValue(term, out string? definition) ? definition : null;
+                    }
+
+                    index = found + Math.Max(1, term.Length);
+                }
+            }
+
+            return null;
+        }
+
+        return null;
+    }
+
+    private float XInLine(List<(int Start, int Length, Run Run)> spans, int charIndex)
+    {
+        foreach ((int start, int length, Run run) in spans)
+        {
+            if (charIndex <= start + length)
+            {
+                int inside = Math.Clamp(charIndex - start, 0, length);
+                return run.X + (inside == 0 ? 0f : Renderer!.Fonts.Measure(run.Text[..inside], run.Style.Font));
+            }
+        }
+
+        return spans.Count == 0 ? 0f : spans[^1].Run.X + spans[^1].Run.Width;
+    }
+
     // ------------------------------------------------------------- geometry
 
     private float DpiScale => DeviceDpi / 96f;
@@ -239,6 +340,12 @@ public sealed class DocumentView : Control
         }
 
         g.Restore(state);
+
+        if (_tipText is not null)
+        {
+            PaintTooltip(g);
+        }
+
         PaintScrollbar(g);
     }
 
@@ -366,6 +473,20 @@ public sealed class DocumentView : Control
             _hoverLink = hoverLink;
             _hoverControl = hoverControl;
             Invalidate();
+        }
+
+        // glossary tooltip (only when not over a link or a control)
+        string? definition = link is null && hoverControl is null ? FindGlossaryAt(Renderer.Layout, content) : null;
+        if (definition != _tipText)
+        {
+            _tipText = definition;
+            _tipTerm = definition is null ? null : "term";
+            _tipAt = e.Location;
+            Invalidate();
+        }
+        else if (definition is not null)
+        {
+            _tipAt = e.Location;
         }
 
         Cursor = link is null ? (hoverControl is null ? Cursors.IBeam : Cursors.Hand) : Cursors.Hand;
@@ -514,11 +635,93 @@ public sealed class DocumentView : Control
     protected override void OnMouseLeave(EventArgs e)
     {
         base.OnMouseLeave(e);
+        ClearTip();
         if (_hoverLink is not null || _hoverControl is not null)
         {
             _hoverLink = null;
             _hoverControl = null;
             Invalidate();
+        }
+    }
+
+    /// <summary>Floating definition card for a glossary term.</summary>
+    private void PaintTooltip(Graphics g)
+    {
+        if (_tipText is null || Renderer is null)
+        {
+            return;
+        }
+
+        float scale = Renderer.Theme.Scale * DpiScale;
+        Font font = Renderer.Fonts.UiFont(11.4f * Renderer.Theme.Scale);
+        float padX = 12f * scale;
+        float padY = 9f * scale;
+        float maxWidth = 300f * scale;
+
+        var lines = new List<string>();
+        foreach (string paragraph in _tipText.Split('\n'))
+        {
+            string current = string.Empty;
+            foreach (string word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                string candidate = current.Length == 0 ? word : current + " " + word;
+                if (Renderer.Fonts.Measure(candidate, font) <= maxWidth - padX * 2f || current.Length == 0)
+                {
+                    current = candidate;
+                    continue;
+                }
+
+                lines.Add(current);
+                current = word;
+            }
+
+            lines.Add(current);
+        }
+
+        if (lines.Count == 0)
+        {
+            return;
+        }
+
+        float lineHeight = Renderer.Fonts.Metrics(font).LineSpacing;
+        float width = lines.Max(l => Renderer.Fonts.Measure(l, font)) + padX * 2f;
+        float height = lines.Count * lineHeight + padY * 2f;
+        float x = _tipAt.X + 16f * scale;
+        float y = _tipAt.Y + 22f * scale;
+
+        if (x + width > ClientSize.Width - 8f)
+        {
+            x = ClientSize.Width - width - 8f;
+        }
+
+        if (y + height > ClientSize.Height - 8f)
+        {
+            y = _tipAt.Y - height - 12f * scale;
+        }
+
+        x = MathF.Max(8f, x);
+        y = MathF.Max(8f, y);
+
+        var rect = new RectangleF(x, y, width, height);
+        using (var shadow = new SolidBrush(Color.FromArgb(30, Colors.Text)))
+        using (var shadowPath = PaintContext.RoundedPath(new RectangleF(rect.X + 2f, rect.Y + 3f, rect.Width, rect.Height), 8f * scale))
+        {
+            g.FillPath(shadow, shadowPath);
+        }
+
+        using (var path = PaintContext.RoundedPath(rect, 8f * scale))
+        {
+            using var fill = new SolidBrush(Colors.Elevated);
+            g.FillPath(fill, path);
+            using var pen = new Pen(Colors.BorderStrong, MathF.Max(1f, scale));
+            g.DrawPath(pen, path);
+        }
+
+        float textY = rect.Top + padY;
+        foreach (string line in lines)
+        {
+            g.DrawString(line, font, new SolidBrush(Colors.Text), rect.Left + padX, textY);
+            textY += lineHeight;
         }
     }
 
@@ -565,6 +768,7 @@ internal static class GraphicsExtensions
         g.FillPath(brush, path);
     }
 }
+
 
 
 

@@ -9,6 +9,7 @@ public static class Harness
     private static int _passed;
     private static int _failed;
     private static readonly List<string> Failures = [];
+    private static readonly Dictionary<string, int> SuiteTotals = new(StringComparer.Ordinal);
     private static string _suite = string.Empty;
 
     public static bool Verbose { get; set; }
@@ -26,6 +27,7 @@ public static class Harness
 
     public static void Test(string name, Action body)
     {
+        SuiteTotals[_suite] = SuiteTotals.GetValueOrDefault(_suite) + 1;
         var sw = Stopwatch.StartNew();
         try
         {
@@ -105,6 +107,12 @@ public static class Harness
     public static int Summarize()
     {
         Console.WriteLine();
+        foreach ((string suite, int count) in SuiteTotals)
+        {
+            Console.WriteLine($"  {suite,-22} {count}");
+        }
+
+        Console.WriteLine();
         if (_failed == 0)
         {
             Console.WriteLine($"ALL PASSED — {_passed} checks");
@@ -122,3 +130,4 @@ public static class Harness
 }
 
 public sealed class AssertionException(string message) : Exception(message);
+

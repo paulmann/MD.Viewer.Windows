@@ -14,6 +14,9 @@ public sealed class ImageAsset
 
     public string DisplayName { get; init; } = string.Empty;
 
+    /// <summary>Absolute path for local images (used to open them on click).</summary>
+    public string? ResolvedPath { get; init; }
+
     public bool IsUsable => Bitmap is not null;
 }
 
@@ -61,7 +64,7 @@ public sealed class ImageCache : IDisposable
 
         if (!File.Exists(path))
         {
-            return new ImageAsset { Error = "file not found", DisplayName = Path.GetFileName(path) };
+            return new ImageAsset { Error = "file not found", DisplayName = Path.GetFileName(path), ResolvedPath = path };
         }
 
         DateTime stamp;
@@ -99,6 +102,7 @@ public sealed class ImageCache : IDisposable
                 Bitmap = bitmap,
                 PixelSize = new Size(source.Width, source.Height),
                 DisplayName = Path.GetFileName(path),
+                ResolvedPath = path,
             };
         }
         catch (Exception ex)
@@ -154,3 +158,4 @@ public sealed class ImageCache : IDisposable
 
     public void Dispose() => Clear();
 }
+

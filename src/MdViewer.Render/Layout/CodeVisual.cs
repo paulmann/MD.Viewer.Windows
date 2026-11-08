@@ -189,17 +189,19 @@ public sealed class ImageVisual : BlockLayout
 
     public override void CollectLinks(List<LinkRegion> regions)
     {
-        if (Caption is null)
+        if (Asset.ResolvedPath is not { Length: > 0 } path)
         {
             return;
         }
 
         regions.Add(new LinkRegion
         {
-            Bounds = new RectangleF(ImageRect.Left, Top, ImageRect.Width, Height),
-            Target = "image:" + Alt,
+            Bounds = ImageRect,
+            Target = "file:" + path,
+            Title = Alt,
         });
     }
 }
+
 
 

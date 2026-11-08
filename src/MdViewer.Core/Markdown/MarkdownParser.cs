@@ -21,6 +21,9 @@ public sealed class MarkdownDocument
 
     public IReadOnlyList<MarkdownDiagnostic> Diagnostics { get; init; } = [];
 
+    /// <summary>Terms from two-column tables, used for hover tooltips.</summary>
+    public IReadOnlyDictionary<string, string> Glossary { get; init; } = new Dictionary<string, string>();
+
     public MarkdownOptions Options { get; init; } = MarkdownOptions.Default;
 
     public string? FilePath { get; init; }
@@ -107,7 +110,6 @@ public sealed class MarkdownParser
 
         string plain = PlainText(blocks);
         int words = CountWords(plain);
-
         string? title = frontMatter.Title;
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -122,6 +124,7 @@ public sealed class MarkdownParser
             Outline = outline,
             Footnotes = registry.Entries,
             Diagnostics = diagnostics,
+            Glossary = BuildGlossary(blocks, inlineParser),
             Options = opts,
             FilePath = filePath,
             Title = title,
@@ -140,18 +143,19 @@ public sealed class MarkdownParser
         for (int i = start; i < lines.Length; i++)
         {
             string line = lines[i];
-            if (line.Length < 4 || line[0] != '[')
+            int indent = LeadingSpaces(line);
+            if (indent > 3 || line.Length < indent + 4 || line[indent] != '[')
             {
                 continue;
             }
 
-            int close = line.IndexOf("]:", StringComparison.Ordinal);
-            if (close < 2)
+            int close = line.IndexOf("]:", indent, StringComparison.Ordinal);
+            if (close < indent + 2)
             {
                 continue;
             }
 
-            string label = line[1..close];
+            string label = line[(indent + 1)..close];
             if (label.StartsWith('^'))
             {
                 continue;
@@ -189,6 +193,19 @@ public sealed class MarkdownParser
                 {
                     url = rest[..space];
                     title = ExtractTitle(rest[space..].Trim());
+                }
+            }
+
+            // A title may sit on the following line, quoted on its own.
+            if (title is null && i + 1 < lines.Length)
+            {
+                string next = lines[i + 1].Trim();
+                bool quoted = next.Length >= 3
+                    && ((next[0] == '"' && next[^1] == '"') || (next[0] == '\'' && next[^1] == '\'') || (next[0] == '(' && next[^1] == ')'));
+                if (quoted)
+                {
+                    title = next[1..^1];
+                    lines[i + 1] = string.Empty;
                 }
             }
 
@@ -413,6 +430,61 @@ public sealed class MarkdownParser
         }
 
         return [.. output];
+    }
+
+    // --------------------------------------------------------------- glossary
+
+    /// <summary>
+    /// Two-column tables double as glossary sources: the first column is a term,
+    /// the second its definition. "Term (ABBR)" also registers both parts.
+    /// </summary>
+    private static Dictionary<string, string> BuildGlossary(Block[] blocks, InlineParser inlineParser)
+    {
+        var glossary = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);
+
+        void Add(string term, string definition)
+        {
+            string key = term.Trim().Trim('*', '`', '_');
+            if (key.Length >= 2 && key.Length <= 80)
+            {
+                glossary[key] = definition;
+            }
+        }
+
+        foreach (Block block in blocks)
+        {
+            if (block is not TableBlock { IsGlossary: true } table)
+            {
+                continue;
+            }
+
+            foreach (string[] row in table.Rows)
+            {
+                if (row.Length < 2)
+                {
+                    continue;
+                }
+
+                string term = InlineParser.PlainText(inlineParser.Parse(row[0])).Trim();
+                string definition = InlineParser.PlainText(inlineParser.Parse(row[1])).Trim();
+                if (term.Length == 0 || definition.Length < 3)
+                {
+                    continue;
+                }
+
+                Add(term, definition);
+
+                int open = term.LastIndexOf('(');
+                int close = term.EndsWith(')') ? term.Length - 1 : -1;
+                if (open > 0 && close > open + 1)
+                {
+                    Add(term[..open], definition);
+                    Add(term[(open + 1)..close], definition);
+                }
+            }
+        }
+
+        return glossary;
     }
 
     // ------------------------------------------------------------- metrics

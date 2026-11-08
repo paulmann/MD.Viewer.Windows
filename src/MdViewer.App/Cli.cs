@@ -77,6 +77,9 @@ public sealed class LaunchOptions
     /// <summary>Print the live control tree and geometry (development).</summary>
     public bool UiDump { get; set; }
 
+    /// <summary>Development: capture the About dialog and exit.</summary>
+    public string? AboutShot { get; set; }
+
     public int ScreenshotDelay { get; set; } = 700;
 
     public List<string> Errors { get; } = [];
@@ -306,6 +309,10 @@ public sealed class LaunchOptions
                     options.UiDump = true;
                     break;
 
+                case "--about-shot":
+                    options.AboutShot = NextValue();
+                    break;
+
                 case "--screenshot":
                     options.ScreenshotPath = NextValue();
                     break;
@@ -412,6 +419,7 @@ public sealed class LaunchOptions
         return sb.ToString();
     }
 }
+
 
 
 

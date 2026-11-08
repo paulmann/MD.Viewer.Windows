@@ -1097,12 +1097,16 @@ public sealed class BlockParser(MarkdownOptions options, InlineParser inline)
                 sb.Append('\n');
             }
 
-            sb.Append(line.TrimEnd());
+            sb.Append(line);
             j++;
 
-            if (j < end && options.DefinitionLists && lines[j].TrimStart().StartsWith(": ", StringComparison.Ordinal) && j == i + 1)
+            if (j < end && options.DefinitionLists && lines[j].TrimStart().StartsWith(": ", StringComparison.Ordinal) && j - i <= 8)
             {
-                return TryDefinitionList(lines, ref i, end, sb.ToString(), out block);
+                if (TryDefinitionList(lines, j, end, sb.ToString(), out block, out int nextLine))
+                {
+                    i = nextLine;
+                    return true;
+                }
             }
         }
 
@@ -1122,12 +1126,13 @@ public sealed class BlockParser(MarkdownOptions options, InlineParser inline)
     private bool IsTableDelimiterContinuation(string[] lines, int j) =>
         options.Tables && j > 0 && lines[j].Contains('|') && IsDelimiterRow(lines[j]) && lines[j - 1].Contains('|');
 
-    private bool TryDefinitionList(string[] lines, ref int i, int end, string term, out Block? block)
+    private bool TryDefinitionList(string[] lines, int definitionStart, int end, string term, out Block? block, out int nextLine)
     {
         block = null;
+        nextLine = definitionStart;
         var items = new List<DefinitionItem>();
         var definitions = new List<string[]>();
-        int j = i + 1;
+        int j = definitionStart;
 
         while (j < end)
         {
@@ -1178,9 +1183,13 @@ public sealed class BlockParser(MarkdownOptions options, InlineParser inline)
             return false;
         }
 
-        items.Add(new DefinitionItem(term, [.. definitions]));
+        // A block may list several terms that share the definitions.
+        foreach (string single in term.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            items.Add(new DefinitionItem(single, [.. definitions]));
+        }
         block = new DefinitionListBlock { Items = [.. items] };
-        i = j;
+        nextLine = j;
         return true;
     }
 
@@ -1247,4 +1256,5 @@ public sealed class BlockParser(MarkdownOptions options, InlineParser inline)
         return false;
     }
 }
+
 

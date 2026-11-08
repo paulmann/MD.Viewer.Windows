@@ -378,8 +378,15 @@ public sealed class MainForm : Form
         ActivateSession(_sessions.Count - 1);
     }
 
+    private MarkdownOptions ParseOptions() => new()
+    {
+        DoubleLineBreaks = _settings.LineBreaks,
+        SmartPunctuation = _settings.SmartPunctuation,
+        HeadingNumbering = _settings.Numbering,
+    };
+
     private MarkdownDocument Parse(string text, string? path) =>
-        new MarkdownParser().Parse(text, MarkdownOptions.Default, path);
+        new MarkdownParser().Parse(text, ParseOptions(), path);
 
     private void ActivateSession(int index)
     {
@@ -414,6 +421,7 @@ public sealed class MainForm : Form
 
         _outline.SetDocument(_active.Document);
         _outline.SetHeader(_active.Title, Stats(_active));
+        SyncGlossary();
 
         UpdateTitle();
         UpdateTabs();
@@ -429,6 +437,8 @@ public sealed class MainForm : Form
         WatchFile();
         HideFind();
     }
+
+    private void SyncGlossary() => _view.SetGlossary(_active?.Document?.Glossary ?? new Dictionary<string, string>());
 
     private string Stats(Session session)
     {
@@ -535,6 +545,7 @@ public sealed class MainForm : Form
         _view.ScrollTo(scroll, animate: false);
         _outline.SetDocument(_active.Document);
         _outline.SetHeader(_active.Title, Stats(_active));
+        SyncGlossary();
     }
 
     private bool SaveActive(bool saveAs)
@@ -662,6 +673,7 @@ public sealed class MainForm : Form
             _renderer.SetDocument(_active.Document);
             _view.RebindLayout();
             _outline.SetDocument(_active.Document);
+            SyncGlossary();
         }
 
         _suppressEditorEvents = true;
@@ -831,8 +843,18 @@ public sealed class MainForm : Form
             return;
         }
 
-        if (url.StartsWith("image:", StringComparison.Ordinal))
+        if (url.StartsWith("file:", StringComparison.Ordinal))
         {
+            string target = url[5..];
+            if (File.Exists(target))
+            {
+                OpenExternal(target);
+            }
+            else
+            {
+                Toast(string.Format(L.T("toast.missing"), Path.GetFileName(target)));
+            }
+
             return;
         }
 
@@ -1110,6 +1132,16 @@ public sealed class MainForm : Form
             _renderer.Invalidate();
             _view.RebindLayout();
         });
+        AddViewItem(view, L.T("menu.lineBreaks"), _settings.LineBreaks, () =>
+        {
+            _settings.LineBreaks = !_settings.LineBreaks;
+            ReparseActive();
+        });
+        AddViewItem(view, L.T("menu.smartPunctuation"), _settings.SmartPunctuation, () =>
+        {
+            _settings.SmartPunctuation = !_settings.SmartPunctuation;
+            ReparseActive();
+        });
         AddViewItem(view, L.T("menu.serif"), _settings.Serif, () =>
         {
             _settings.Serif = !_settings.Serif;
@@ -1193,10 +1225,26 @@ public sealed class MainForm : Form
 
     private void ShowAbout()
     {
-        string version = typeof(MainForm).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
-        string text = string.Format(L.T("about.text"), version) + $"\n\n.NET {Environment.Version}  ·  {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}";
-        using var dialog = new InfoDialog(L.T("menu.about"), text, _theme);
+        using var dialog = new AboutDialog(_theme);
         dialog.ShowDialog(this);
+    }
+
+    /// <summary>Re-parses the active document after a parser-level option changed.</summary>
+    private void ReparseActive()
+    {
+        if (_active is null)
+        {
+            return;
+        }
+
+        float scroll = _view.ScrollY;
+        _active.Document = Parse(_active.Text, _active.Path);
+        _renderer.SetDocument(_active.Document);
+        _view.RebindLayout();
+        _view.ScrollTo(scroll, animate: false);
+        _outline.SetDocument(_active.Document);
+        SyncGlossary();
+        UpdateStatus();
     }
 
     private void ReloadActive()
@@ -1215,6 +1263,7 @@ public sealed class MainForm : Form
             _renderer.SetDocument(_active.Document);
             _view.RebindLayout();
             _outline.SetDocument(_active.Document);
+            SyncGlossary();
             _suppressEditorEvents = true;
             _editor.Text = text;
             _suppressEditorEvents = false;
@@ -1693,6 +1742,10 @@ public sealed class MainForm : Form
         return sb.ToString();
     }
 }
+
+
+
+
 
 
 

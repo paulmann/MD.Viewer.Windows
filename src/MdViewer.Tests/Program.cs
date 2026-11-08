@@ -34,11 +34,15 @@ internal static class Program
         RenderTests.Run();
         ThemeTests.Run();
         DiagramTests.Run();
+        MarkdownExtraTests.Run();
+        GlossaryTests.Run();
         PrintTests.Run();
 
         return Harness.Summarize();
     }
 }
+
+
 
 
 
