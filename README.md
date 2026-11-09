@@ -97,6 +97,13 @@ empty. Dragging `.md` files onto the window opens them in new tabs.
 `Ctrl+Shift+M` cycles through the three. In editor mode `Ctrl+Shift+P` splits the window into
 editor + live preview; the preview re-renders 220 ms after you stop typing.
 
+Files always open **rendered**; the last mode is not restored on start-up. If you would rather come
+back to the mode you left, switch on **View → Remember the last view mode** (or pass `--mode`).
+
+The theme button (and `Ctrl+Shift+L`) flips light ↔ dark in one click — it never walks through a
+state that looks the same as the current one. **View → Theme → Follow Windows** puts it back under
+system control, and the button then carries a dot to show that.
+
 ![Source mode](docs/img/source-light.png)
 
 ---

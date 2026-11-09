@@ -145,6 +145,17 @@ internal static partial class Program
             return 0;
         }
 
+        if (options.ThemeClicks is int clicks)
+        {
+            form.Shown += (_, _) =>
+            {
+                for (int i = 0; i < clicks; i++)
+                {
+                    form.ToggleTheme();
+                }
+            };
+        }
+
         if (options.ScrollPixels is float scroll)
         {
             form.Shown += (_, _) => form.ScrollContent(scroll);
@@ -310,6 +321,7 @@ internal sealed partial class ConsoleBridge : IDisposable
         }
     }
 }
+
 
 
 

@@ -33,6 +33,9 @@ public sealed class AppSettings
 
     public bool EditorPreview { get; set; }
 
+    /// <summary>Open files in the last used view mode instead of always Rendered.</summary>
+    public bool RememberMode { get; set; }
+
     public bool Watch { get; set; } = true;
 
     public string Language { get; set; } = "auto";
@@ -154,6 +157,7 @@ public sealed class AppSettings
         LineBreaks = true;
         SmartPunctuation = false;
         EditorPreview = false;
+        RememberMode = false;
         Watch = true;
         Recent.Clear();
         Session.Clear();
@@ -165,6 +169,7 @@ public sealed class AppSettings
         Maximized = false;
     }
 }
+
 
 
 

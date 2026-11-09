@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] — 2026-11-09
+
+Two habits of the interface that were wrong by default.
+
+### Changed
+
+- **The theme button flips the appearance instead of cycling three modes.** The old cycle went
+  `Auto → Light → Dark`; with Windows in dark mode “Auto” and “Dark” look identical, so the first
+  click changed nothing and reaching light took two clicks. The button (and `Ctrl+Shift+L`) now
+  switches light ↔ dark in one click, the icon shows what is on screen, and a dot marks when the
+  theme follows Windows. `View → Theme` still offers all three states.
+- **Files open in the rendered view.** The last used mode is no longer restored on start-up — the
+  viewer always opens rendered, unless `--mode` says otherwise. `View → Remember the last view mode`
+  brings the old behaviour back for anyone who wants it.
+
+### Added
+
+- `--theme-clicks <n>` and `--scroll <px>` for the screenshot tests, plus seven checks that pin the
+  new defaults: rendered start-up, the remember-mode switch, `--mode` precedence, and that one theme
+  click always changes the appearance — even from Auto.
+
 ## [1.3.2] — 2026-11-09
 
 Upgrades now clean up after themselves, and the upgrade/uninstall behaviour is measured instead of

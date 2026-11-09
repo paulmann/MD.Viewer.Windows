@@ -86,6 +86,9 @@ public sealed class LaunchOptions
     /// <summary>Development: scroll the rendered view by N pixels before a screenshot.</summary>
     public float? ScrollPixels { get; set; }
 
+    /// <summary>Development: press the theme button N times before a screenshot.</summary>
+    public int? ThemeClicks { get; set; }
+
     public int ScreenshotDelay { get; set; } = 700;
 
     public List<string> Errors { get; } = [];
@@ -315,6 +318,14 @@ public sealed class LaunchOptions
                     options.UiDump = true;
                     break;
 
+                case "--theme-clicks":
+                    if (int.TryParse(NextValue(), out int themeClicks) && themeClicks >= 0)
+                    {
+                        options.ThemeClicks = themeClicks;
+                    }
+
+                    break;
+
                 case "--scroll":
                     if (float.TryParse(NextValue(), NumberStyles.Float, CultureInfo.InvariantCulture, out float scrollPixels))
                     {
@@ -437,6 +448,7 @@ public sealed class LaunchOptions
         return sb.ToString();
     }
 }
+
 
 
 

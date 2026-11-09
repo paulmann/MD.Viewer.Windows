@@ -33,6 +33,7 @@ internal static class Program
         ParserTests.Run();
         RenderTests.Run();
         ThemeTests.Run();
+        BehaviourTests.Run();
         DiagramTests.Run();
         MarkdownExtraTests.Run();
         GlossaryTests.Run();
@@ -41,6 +42,7 @@ internal static class Program
         return Harness.Summarize();
     }
 }
+
 
 
 

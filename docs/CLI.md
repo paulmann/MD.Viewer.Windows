@@ -42,7 +42,7 @@ Everything is optional. With no arguments the last session is restored (up to ei
 | `--print` | Open the print dialog with the document rendered |
 | `--screenshot <file>` | Show the window, capture the client area, exit (development) |
 | `--screenshot-delay <ms>` | Wait before capturing (default 700) |
-| `--ui-dump` | Print the live control geometry and exit (development) |
+| `--ui-dump` | Print the live control geometry and exit (development) |\n| `--theme-clicks <n>` | Press the theme button n times before a screenshot (development) |\n| `--scroll <px>` | Scroll the rendered view before a screenshot (development) |
 
 ## Other
 
@@ -71,3 +71,4 @@ Everything is optional. With no arguments the last session is restored (up to ei
   next step depends on the window being closed.
 * Unknown options and impossible values are reported and the help text is printed; the app never
   starts with a silently wrong configuration.
+

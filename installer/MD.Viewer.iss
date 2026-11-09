@@ -12,7 +12,7 @@
 
 #define AppName        "MD Viewer"
 #ifndef AppVersion
-  #define AppVersion   "1.3.2"
+  #define AppVersion   "1.3.3"
 #endif
 #ifndef PayloadFile
   #define PayloadFile  "..\artifacts\publish\mdview.exe"
@@ -220,5 +220,6 @@ begin
     RemoveAssociationIfOurs('.mdown');
   end;
 end;
+
 
 

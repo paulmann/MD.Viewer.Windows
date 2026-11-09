@@ -52,6 +52,8 @@ public static class L
         "menu.lineBreaks" => "Single Enter breaks the line",
         "menu.smartPunctuation" => "Typographic replacements",
         "menu.preview" => "Live preview (editor)",
+        "menu.rememberMode" => "Remember the last view mode",
+        "menu.theme.tip" => "Light / dark theme (Ctrl+Shift+L) — “Follow Windows” is in the menu",
         "menu.theme" => "Theme",
         "menu.theme.auto" => "Follow Windows",
         "menu.theme.light" => "Light",
@@ -148,6 +150,8 @@ public static class L
         "menu.lineBreaks" => "Одиночный Enter переносит строку",
         "menu.smartPunctuation" => "Типографские замены",
         "menu.preview" => "Живой просмотр (редактор)",
+        "menu.rememberMode" => "Запоминать режим просмотра",
+        "menu.theme.tip" => "Светлая / тёмная тема (Ctrl+Shift+L) — «как в Windows» в меню",
         "menu.theme" => "Тема",
         "menu.theme.auto" => "Как в Windows",
         "menu.theme.light" => "Светлая",
@@ -212,4 +216,5 @@ public static class L
         _ => En(key),
     };
 }
+
 

@@ -93,7 +93,9 @@ public sealed class MainForm : Form
         _themeMode = options.Theme ?? ParseTheme(settings.Theme);
         float zoom = options.Zoom ?? settings.Zoom;
         _theme = ThemeCatalog.Resolve(_themeMode.ToString().ToLowerInvariant()).WithScale(zoom).WithSerif(_serif);
-        _mode = options.Mode ?? ParseMode(settings.Mode);
+        // Files open in the rendered view unless the user asked to remember the last mode
+        // (or passed --mode). The saved mode is still kept for the case it is enabled.
+        _mode = options.Mode ?? (settings.RememberMode ? ParseMode(settings.Mode) : ViewMode.Rendered);
         _outlineVisible = options.ToggleOutline ?? settings.Outline;
         _previewVisible = settings.EditorPreview;
 
@@ -124,7 +126,7 @@ public sealed class MainForm : Form
         _btnSearch = NewButton(IconKind.Search, L.T("find.placeholder"), () => ShowFind());
         _btnZoomOut = NewButton(IconKind.Minus, L.T("menu.zoomOut"), () => SetZoom(_theme.Scale - 0.1f));
         _btnZoomIn = NewButton(IconKind.Plus, L.T("menu.zoomIn"), () => SetZoom(_theme.Scale + 0.1f));
-        _btnTheme = NewButton(IconKind.Auto, L.T("menu.theme"), CycleTheme);
+        _btnTheme = NewButton(IconKind.Auto, L.T("menu.theme.tip"), ToggleTheme);
         _btnMore = NewButton(IconKind.More, L.T("menu.file"), ShowMenu);
 
         _modes = new ModeSwitcher
@@ -738,15 +740,14 @@ public sealed class MainForm : Form
         _ = fromWheel;
     }
 
-    private void CycleTheme()
+    /// <summary>
+    /// Flips the actual appearance instead of walking Auto → Light → Dark. With Windows in dark
+    /// mode "Auto" looks exactly like "Dark", so a three-step cycle made the first click look dead.
+    /// "Follow Windows" stays one click away in the View menu.
+    /// </summary>
+    public void ToggleTheme()
     {
-        _themeMode = _themeMode switch
-        {
-            ThemeMode.Auto => ThemeMode.Light,
-            ThemeMode.Light => ThemeMode.Dark,
-            _ => ThemeMode.Auto,
-        };
-
+        _themeMode = _theme.IsDark ? ThemeMode.Light : ThemeMode.Dark;
         ApplyTheme(persist: true);
     }
 
@@ -761,12 +762,9 @@ public sealed class MainForm : Form
         }
         _renderer.SetTheme(_theme);
 
-        _btnTheme.Icon = _themeMode switch
-        {
-            ThemeMode.Light => IconKind.Sun,
-            ThemeMode.Dark => IconKind.Moon,
-            _ => IconKind.Auto,
-        };
+        // The icon shows what you see, not which of the three modes is stored.
+        _btnTheme.Icon = _theme.IsDark ? IconKind.Moon : IconKind.Sun;
+        _btnTheme.Active = _themeMode == ThemeMode.Auto;
 
         BackColor = _theme.Colors.Canvas;
         _toolbar.BackColor = _theme.Colors.Surface;
@@ -1138,6 +1136,10 @@ public sealed class MainForm : Form
         var view = new ToolStripMenuItem(L.T("menu.view"));
         AddViewItem(view, L.T("menu.outline"), _outlineVisible, ToggleOutline);
         AddViewItem(view, L.T("menu.preview"), _previewVisible, TogglePreview);
+        AddViewItem(view, L.T("menu.rememberMode"), _settings.RememberMode, () =>
+        {
+            _settings.RememberMode = !_settings.RememberMode;
+        });
         AddViewItem(view, L.T("menu.lineNumbers"), _lineNumbers, () =>
         {
             _lineNumbers = !_lineNumbers;
@@ -1620,7 +1622,7 @@ public sealed class MainForm : Form
                 SetMode((ViewMode)(((int)_mode + 1) % 3));
                 return true;
             case Keys.Control | Keys.Shift | Keys.L:
-                CycleTheme();
+                ToggleTheme();
                 return true;
             case Keys.Control | Keys.Oemplus:
             case Keys.Control | Keys.Add:
@@ -1710,6 +1712,9 @@ public sealed class MainForm : Form
 
     public ThemeMode CurrentThemeMode => _themeMode;
 
+    /// <summary>The palette currently painted (what the user sees, not the stored mode).</summary>
+    public Theme Theme => _theme;
+
     public ViewMode CurrentMode => _mode;
 
     public void SetThemeMode(ThemeMode mode)
@@ -1795,6 +1800,7 @@ public sealed class MainForm : Form
         return sb.ToString();
     }
 }
+
 
 
 
