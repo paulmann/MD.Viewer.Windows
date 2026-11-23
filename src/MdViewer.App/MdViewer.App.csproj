@@ -16,6 +16,15 @@
     <PublishReadyToRun>false</PublishReadyToRun>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);WFO1000;WFO5001;WFO5002</NoWarn>
+
+    <!--
+      Only the self-contained publish gets an .exe. A framework-dependent apphost in
+      bin/ looks like a runnable program but demands the exact .NET 11 runtime and
+      shows "You must install or update .NET" — exactly the trap a reader falls into.
+      Every other build therefore produces mdview.dll, which cannot be mistaken for
+      the shipped program; `build.ps1 -Task run` starts it through the SDK.
+    -->
+    <UseAppHost Condition="'$(SelfContained)' != 'true'">false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>

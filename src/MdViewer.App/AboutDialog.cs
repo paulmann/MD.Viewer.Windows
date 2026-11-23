@@ -352,7 +352,10 @@ internal static class Diagnostics
     {
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("MD Viewer " + (typeof(Diagnostics).Assembly.GetName().Version?.ToString(3) ?? "1.2.1"));
-        sb.AppendLine(RuntimeInformation.FrameworkDescription + "  (self-contained: the runtime is embedded, no .NET installation required)");
+        bool bundled = string.IsNullOrEmpty(typeof(Diagnostics).Assembly.Location);
+        sb.AppendLine(RuntimeInformation.FrameworkDescription + (bundled
+            ? "  (self-contained: the runtime is embedded, no .NET installation required)"
+            : "  (development build: needs the .NET 11 runtime)"));
         sb.AppendLine(RuntimeInformation.OSDescription + " (" + RuntimeInformation.OSArchitecture + ")");
         sb.AppendLine("64-bit process: " + Environment.Is64BitProcess);
         sb.AppendLine("System dark: " + ThemeCatalog.SystemPrefersDark());

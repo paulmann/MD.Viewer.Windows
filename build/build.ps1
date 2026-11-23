@@ -203,9 +203,11 @@ function Publish-Installer {
 
 function Invoke-App {
     Write-Host '» run' -ForegroundColor Cyan
-    $exe = Join-Path $repoRoot "src\MdViewer.App\bin\$Configuration\net11.0-windows\mdview.exe"
-    if (-not (Test-Path $exe)) { throw "app not built: $exe" }
-    Start-Process -FilePath $exe -ArgumentList $args
+    # Development builds have no apphost on purpose (see MdViewer.App.csproj), so the
+    # SDK starts the assembly directly instead of an exe that would ask for .NET.
+    $dll = Join-Path $repoRoot "src\MdViewer.App\bin\$Configuration\net11.0-windows\mdview.dll"
+    if (-not (Test-Path $dll)) { throw "app not built: $dll" }
+    Start-Process -FilePath $dotnet -ArgumentList (@($dll) + $args)
 }
 
 function Clear-All {

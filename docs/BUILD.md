@@ -53,8 +53,14 @@ The build is **self-contained**: the .NET runtime and the Windows Desktop framew
 
 | Build | Size | Needs .NET installed |
 | --- | ---: | :---: |
-| `dotnet build` output (`src/MdViewer.App/bin/Release/net11.0-windows/mdview.exe`) | 74 752 B | yes |
-| `-Task publish` (`artifacts/publish/mdview.exe`) | 52 497 132 B | **no** |
+| `dotnet build` output (`src/MdViewer.App/bin/Release/net11.0-windows/mdview.dll`) | 269 824 B | yes — and it has no `.exe` on purpose |
+| `-Task publish` (`artifacts/publish/mdview.exe`) | 52 598 845 B | **no** |
+
+Development builds deliberately produce **no `mdview.exe`**: a framework-dependent apphost looks like
+the shipped program but greets the reader with “You must install or update .NET”. The project sets
+`UseAppHost=false` for every non-self-contained build, so the only `mdview.exe` in the tree is the
+published one. `build.ps1 -Task run` starts the development assembly through the SDK
+(`dotnet .../mdview.dll`).
 
 The runtime inside the single file is compressed (`EnableCompressionInSingleFile`), which is why a
 plain text search does not find `coreclr.dll`; the assembly names (`System.Private.CoreLib`,

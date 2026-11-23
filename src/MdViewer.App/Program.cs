@@ -33,7 +33,12 @@ internal static partial class Program
         {
             using var bridge = new ConsoleBridge();
             Console.WriteLine("MD Viewer " + (typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.2.1"));
-            Console.WriteLine(RuntimeInformation.FrameworkDescription + "  (embedded; no .NET installation required)");
+            // A single-file bundle has no assembly path; a plain build does, and that
+            // build needs .NET 11 on the machine — say so instead of claiming otherwise.
+            bool bundled = string.IsNullOrEmpty(typeof(Program).Assembly.Location);
+            Console.WriteLine(RuntimeInformation.FrameworkDescription + (bundled
+                ? "  (embedded in this file; no .NET installation required)"
+                : "  (development build: needs the .NET 11 runtime, use artifacts/publish/mdview.exe)"));
             return 0;
         }
 
