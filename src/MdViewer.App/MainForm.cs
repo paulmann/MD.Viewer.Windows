@@ -135,6 +135,14 @@ public sealed class MainForm : Form
         _btnWidth.Label = WidthLabel(_widthMode);
         _btnTheme = NewButton(IconKind.Auto, L.T("menu.theme.tip"), ToggleTheme);
         _btnMore = NewButton(IconKind.More, L.T("menu.file"), ShowMenu);
+        // The button answers the right mouse button as well: that is how people try to open it.
+        _btnMore.MouseUp += (_, e) =>
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                ShowMenu();
+            }
+        };
 
         _modes = new ModeSwitcher
         {
@@ -147,6 +155,8 @@ public sealed class MainForm : Form
         _tabs = new TabStrip { Visible = false };
         _tabs.TabSelected += (_, index) => ActivateSession(index);
         _tabs.TabClosed += (_, index) => CloseSession(index);
+        _tabs.TabDragStarted += (_, index) => StartTabDrag(index);
+        _tabs.TabDropReceived = HandleTabDrop;
 
         _outline = new OutlinePanel { Visible = _outlineVisible };
         _outline.AnchorActivated += (_, id) => NavigateToAnchor(id);
@@ -692,6 +702,177 @@ public sealed class MainForm : Form
 
         ActivateSession(Math.Min(index, _sessions.Count - 1));
         UpdateTabs();
+    }
+
+    // -------------------------------------------------------- dragged tabs
+
+    /// <summary>
+    /// The user pulled a tab away. Dropping it on another MD Viewer window makes it a tab
+    /// there (that window returns Move and this one lets it go); dropping it on any other
+    /// place — the desktop, another monitor — opens a new window exactly where it landed.
+    /// </summary>
+    public void StartTabDrag(int index)
+    {
+        if (index < 0 || index >= _sessions.Count)
+        {
+            return;
+        }
+
+        Session session = _sessions[index];
+        if (session.Path is null)
+        {
+            Toast(L.T("tabdrag.untitled"));
+            return;
+        }
+
+        DragDropEffects effect = _tabs.DoDragDrop(TabDrag.Create(session.Path, Handle.ToInt64()), DragDropEffects.Move);
+        if (effect == DragDropEffects.Move)
+        {
+            RemoveSessionQuietly(session);
+            return;
+        }
+
+        if (effect != DragDropEffects.None)
+        {
+            return;
+        }
+
+        // Dropped outside every MD Viewer window: the document gets its own window there.
+        if (session.Dirty && !SaveSession(session))
+        {
+            Toast(string.Format(L.T("tabdrag.failed"), session.Title));
+            return;
+        }
+
+        if (DetachToNewWindow(session, Cursor.Position))
+        {
+            RemoveSessionQuietly(session);
+        }
+    }
+
+    /// <summary>A dropped tab: Move means this window takes it and the source closes its copy.</summary>
+    public DragDropEffects HandleTabDrop(string path, long sourceHandle)
+    {
+        string fullPath;
+        try
+        {
+            fullPath = Path.GetFullPath(path);
+        }
+        catch (Exception)
+        {
+            return DragDropEffects.None;
+        }
+
+        bool fromThisWindow = sourceHandle == Handle.ToInt64();
+        bool alreadyOpen = _sessions.Any(s => string.Equals(s.Path, fullPath, StringComparison.OrdinalIgnoreCase));
+        DragDropEffects effect = TabDrag.Decide(fromThisWindow, alreadyOpen);
+
+        if (effect is DragDropEffects.Move or DragDropEffects.Link)
+        {
+            OpenFile(fullPath);
+        }
+
+        return effect;
+    }
+
+    private void RemoveSessionQuietly(Session session)
+    {
+        int index = _sessions.IndexOf(session);
+        if (index < 0)
+        {
+            return;
+        }
+
+        _sessions.RemoveAt(index);
+        if (_sessions.Count == 0)
+        {
+            _active = null;
+            _renderer.SetDocument(null);
+            _view.RebindLayout();
+            _outline.SetDocument(null);
+            _editor.Text = string.Empty;
+            UpdateTitle();
+            UpdateTabs();
+            UpdateStatus();
+            return;
+        }
+
+        ActivateSession(Math.Min(index, _sessions.Count - 1));
+        UpdateTabs();
+    }
+
+    private bool SaveSession(Session session)
+    {
+        int previous = _active is null ? -1 : _sessions.IndexOf(_active);
+        ActivateSession(_sessions.IndexOf(session));
+        bool saved = SaveActive(false);
+        if (previous >= 0)
+        {
+            ActivateSession(previous);
+        }
+
+        return saved;
+    }
+
+    private bool DetachToNewWindow(Session session, Point screenPoint)
+    {
+        if (session.Path is null)
+        {
+            return false;
+        }
+
+        (string host, string? assembly) = SelfLauncher();
+        if (host.Length == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            Process.Start(BuildStartInfo(host, assembly, session.Path, screenPoint));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Toast(ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>The host that can start another window: the shipped exe, or dotnet + our dll.</summary>
+    public static (string Host, string? Assembly) SelfLauncher()
+    {
+        string? path = Environment.ProcessPath;
+        if (string.IsNullOrEmpty(path))
+        {
+            return (string.Empty, null);
+        }
+
+        bool isDotnet = string.Equals(Path.GetFileNameWithoutExtension(path), "dotnet", StringComparison.OrdinalIgnoreCase);
+        if (!isDotnet)
+        {
+            return (path, null);
+        }
+
+        // Only the development host needs the assembly path; the shipped exe is single-file
+        // and its location is deliberately empty (IL3000 is expected here).
+#pragma warning disable IL3000
+        return (path, typeof(MainForm).Assembly.Location);
+#pragma warning restore IL3000
+    }
+
+    public static ProcessStartInfo BuildStartInfo(string host, string? assembly, string path, Point position)
+    {
+        var start = new ProcessStartInfo(host) { UseShellExecute = true };
+        if (!string.IsNullOrEmpty(assembly))
+        {
+            start.ArgumentList.Add(assembly);
+        }
+
+        start.ArgumentList.Add(path);
+        start.ArgumentList.Add("--position");
+        start.ArgumentList.Add($"{position.X},{position.Y}");
+        return start;
     }
 
     // ----------------------------------------------------------------- modes
@@ -1254,6 +1435,48 @@ public sealed class MainForm : Form
 
     private void ShowMenu()
     {
+        _ = ShowFileMenu();
+    }
+
+    /// <summary>
+    /// Where the File menu is anchored, in <b>screen</b> coordinates. A dropdown is placed
+    /// from its own coordinates, so a client-relative point sends it to the wrong monitor
+    /// on a multi-display desktop.
+    /// </summary>
+    public Point MenuAnchor() => _btnMore.PointToScreen(new Point(0, _btnMore.Height));
+
+    /// <summary>
+    /// Opens the File menu under its button and guarantees it belongs to the same monitor:
+    /// whatever the placement code did (mixed DPI, a window straddling two screens), the
+    /// menu is pulled back into the button's screen.
+    /// </summary>
+    private ContextMenuStrip ShowFileMenu()
+    {
+        ContextMenuStrip menu = BuildMenu();
+        Point anchor = MenuAnchor();
+        Screen screen = Screen.FromPoint(anchor);
+        menu.Show(anchor);
+
+        Rectangle anchorRect = new(anchor.X, anchor.Y, 1, 1);
+        if (!Screen.FromRectangle(menu.Bounds).Equals(screen))
+        {
+            menu.Location = TabDrag.FitMenu(anchorRect, menu.Bounds.Size, screen.WorkingArea).Location;
+        }
+
+        return menu;
+    }
+
+    /// <summary>Development: opens the File menu, reports both rectangles in screen coordinates.</summary>
+    public (Rectangle Button, Rectangle Menu) ShowMenuAndDescribe()
+    {
+        ContextMenuStrip menu = ShowFileMenu();
+        Rectangle bounds = menu.Bounds;
+        menu.Close();
+        return (_btnMore.RectangleToScreen(_btnMore.ClientRectangle), bounds);
+    }
+
+    private ContextMenuStrip BuildMenu()
+    {
         var menu = new ContextMenuStrip { ShowImageMargin = false, Renderer = new ToolStripProfessionalRenderer() };
 
         void Add(string text, Action action, Keys shortcut = Keys.None)
@@ -1382,7 +1605,7 @@ public sealed class MainForm : Form
         Separator();
         Add(L.T("menu.exit"), Close, Keys.Alt | Keys.F4);
 
-        menu.Show(_btnMore, new Point(0, _btnMore.Height));
+        return menu;
     }
 
     private static void AddViewItem(ToolStripMenuItem parent, string text, bool isChecked, Action action)
@@ -1830,6 +2053,12 @@ public sealed class MainForm : Form
 
     private void OnDragEnter(object? sender, DragEventArgs e)
     {
+        if (e.Data is not null && TabDrag.TryRead(e.Data, out _, out _))
+        {
+            e.Effect = DragDropEffects.Move;
+            return;
+        }
+
         if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
         {
             e.Effect = DragDropEffects.Copy;
@@ -1838,6 +2067,13 @@ public sealed class MainForm : Form
 
     private void OnDragDrop(object? sender, DragEventArgs e)
     {
+        // A tab dragged from another window (or from this one) becomes a tab here.
+        if (TabDrag.TryRead(e.Data, out string draggedPath, out long sourceHandle))
+        {
+            e.Effect = HandleTabDrop(draggedPath, sourceHandle);
+            return;
+        }
+
         if (e.Data?.GetData(DataFormats.FileDrop) is not string[] files)
         {
             return;
@@ -1956,6 +2192,8 @@ public sealed class MainForm : Form
         sb.AppendLine($"layout      : {(this._renderer.Layout is null ? "null" : $"{_renderer.Layout.Blocks.Count} blocks, height {_renderer.Layout.Height:0.0}")}");
         sb.AppendLine($"theme       : {_theme.Id} scale={_theme.Scale} dark={_theme.IsDark}");
         sb.AppendLine($"mode        : {_mode}  sessions={_sessions.Count}");
+        sb.AppendLine("tabs        : " + _tabs.Bounds + " visible=" + _tabs.Visible + " "
+            + string.Join(" ", _tabs.ScreenPills().Select(p => $"[{p.X},{p.Y} {p.Width}x{p.Height}]")));
         if (_renderer.Layout is { } layout)
         {
             foreach (BlockLayout block in layout.Blocks.Take(6))

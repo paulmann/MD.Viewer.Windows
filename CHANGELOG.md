@@ -15,6 +15,32 @@ All notable changes to this project are documented here. The format follows
   the published one; `build.ps1 -Task run` starts `mdview.dll` through the SDK. `--version` and the
   About diagnostics now say whether the runtime is embedded or the build needs .NET.
 
+## [1.4.1] — 2026-11-24
+
+Tabs became movable objects, and the File menu no longer picks a monitor of its own.
+
+### Fixed
+
+- **The menu could open on another display.** A dropdown is positioned from its own coordinates, so
+  on a multi-monitor desktop any drift (mixed DPI, a window straddling two screens) sent the File
+  menu to the neighbouring monitor. It is now anchored in screen coordinates, and after opening it
+  is checked: if the menu did not land on the button's monitor, it is moved there and kept inside
+  that monitor's working area. Measured on four displays (2560×1440, 1440×2560 ×2, 2560×1440) with
+  the window at each one: the menu always sat under its button on the same screen.
+- The ☰ button also answers the right mouse button, which is how people try to open it.
+
+### Added
+
+- **Tabs can be dragged.** Pull a tab to another monitor and the document opens in a new window
+  exactly where it was dropped; drag it onto another MD Viewer window and it becomes a tab there,
+  disappearing from the source window. Dropping it back on its own window changes nothing. An
+  unsaved document is saved first, and if that fails it stays in place. The payload travels as a
+  custom clipboard format plus a prefixed text fallback, so the move also works between two
+  processes — verified with real mouse input on this machine: 1 window → 2 windows and back to
+  2 tabs without a restart.
+- `--position <x,y>` opens a window at a screen position (used by the drag), `--menu-dump` reports
+  the menu geometry for the multi-monitor checks.
+
 ## [1.4.0] — 2026-11-24
 
 Formulas are typeset by the viewer itself, wide screens are finally used, tables stay inside the

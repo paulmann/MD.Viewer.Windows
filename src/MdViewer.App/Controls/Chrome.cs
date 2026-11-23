@@ -321,12 +321,16 @@ public sealed class TabStrip : ChromeControl
 {
     private int _hover = -1;
     private int _hoverClose = -1;
+    private int _dragIndex = -1;
+    private Point _dragOrigin;
+    private bool _dragArmed;
 
     public TabStrip()
     {
         SetStyle(ControlStyles.Selectable, false);
         TabStop = false;
         Height = (int)S(36f);
+        AllowDrop = true;
     }
 
     public List<TabItem> Tabs { get; } = [];
@@ -336,6 +340,24 @@ public sealed class TabStrip : ChromeControl
     public event EventHandler<int>? TabSelected;
 
     public event EventHandler<int>? TabClosed;
+
+    /// <summary>The user started dragging a tab; the owner begins the drag-and-drop.</summary>
+    public event EventHandler<int>? TabDragStarted;
+
+    /// <summary>Returns the effect the window applies to a dropped tab.</summary>
+    public Func<string, long, DragDropEffects>? TabDropReceived { get; set; }
+
+    /// <summary>Pill rectangles in screen coordinates (development / tests).</summary>
+    public IReadOnlyList<Rectangle> ScreenPills()
+    {
+        var result = new List<Rectangle>();
+        foreach (RectangleF pill in MeasureTabs())
+        {
+            result.Add(RectangleToScreen(Rectangle.Round(pill)));
+        }
+
+        return result;
+    }
 
 
     private RectangleF[] MeasureTabs()
@@ -462,6 +484,19 @@ public sealed class TabStrip : ChromeControl
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
+        if (_dragArmed && _dragIndex >= 0 && e.Button == MouseButtons.Left)
+        {
+            Point now = PointToScreen(e.Location);
+            if (Math.Abs(now.X - _dragOrigin.X) > S(6f) || Math.Abs(now.Y - _dragOrigin.Y) > S(6f))
+            {
+                int dragged = _dragIndex;
+                _dragArmed = false;
+                _dragIndex = -1;
+                TabDragStarted?.Invoke(this, dragged);
+                return;
+            }
+        }
+
         int index = IndexAt(e.Location, out bool onClose);
         int closeIndex = onClose ? index : -1;
         if (index != _hover || closeIndex != _hoverClose)
@@ -504,6 +539,13 @@ public sealed class TabStrip : ChromeControl
             return;
         }
 
+        if (e.Button == MouseButtons.Left)
+        {
+            _dragIndex = index;
+            _dragOrigin = PointToScreen(e.Location);
+            _dragArmed = true;
+        }
+
         if (index != SelectedIndex)
         {
             SelectedIndex = index;
@@ -512,6 +554,35 @@ public sealed class TabStrip : ChromeControl
         }
 
         base.OnMouseDown(e);
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        _dragArmed = false;
+        _dragIndex = -1;
+        base.OnMouseUp(e);
+    }
+
+    // Dragging a tab onto another window makes it a tab there.
+    protected override void OnDragEnter(DragEventArgs e) => PreviewDrop(e);
+
+    protected override void OnDragOver(DragEventArgs e) => PreviewDrop(e);
+
+    private static void PreviewDrop(DragEventArgs e)
+    {
+        // The final effect is decided in OnDragDrop, once the source is known.
+        e.Effect = TabDrag.TryRead(e.Data, out _, out _) ? DragDropEffects.Move : DragDropEffects.None;
+    }
+
+    protected override void OnDragDrop(DragEventArgs e)
+    {
+        if (TabDrag.TryRead(e.Data, out string path, out long source))
+        {
+            e.Effect = TabDropReceived?.Invoke(path, source) ?? DragDropEffects.None;
+            return;
+        }
+
+        base.OnDragDrop(e);
     }
 }
 

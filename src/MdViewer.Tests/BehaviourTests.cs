@@ -164,6 +164,113 @@ public static class BehaviourTests
             Harness.Equal(1, start.ArgumentList.Count, "one argument");
             Harness.Equal(@"C:\docs\a.md", start.ArgumentList[0], "file");
         });
+
+        Harness.Suite("dragged tabs");
+
+        Harness.Test("a dragged tab carries its path and its window", () =>
+        {
+            DataObject data = TabDrag.Create(@"C:\docs\a.md", 4242);
+            Harness.True(TabDrag.TryRead(data, out string path, out long source), "readable");
+            Harness.Equal(@"C:\docs\a.md", path, "path");
+            Harness.Equal(4242L, source, "source");
+        });
+
+        Harness.Test("foreign data is not a dragged tab", () =>
+        {
+            var data = new DataObject(DataFormats.UnicodeText, "hello");
+            Harness.False(TabDrag.TryRead(data, out _, out _), "plain text refused");
+            Harness.False(TabDrag.TryRead(null, out _, out _), "null refused");
+        });
+
+        Harness.Test("a tab survives a process boundary as a blob", () =>
+        {
+            // OLE hands a custom format over as a byte array, not as the original string.
+            byte[] blob = System.Text.Encoding.UTF8.GetBytes("777\nC:\\docs\\b.md");
+            var data = new DataObject();
+            data.SetData(TabDrag.Format, blob);
+
+            Harness.True(TabDrag.TryRead(data, out string path, out long source), "readable");
+            Harness.Equal(@"C:\docs\b.md", path, "path");
+            Harness.Equal(777L, source, "source");
+        });
+
+        Harness.Test("a tab survives as plain text too", () =>
+        {
+            var data = new DataObject(DataFormats.UnicodeText, "MDViewer.Tab:5150:C:\\docs\\c.md");
+            Harness.True(TabDrag.TryRead(data, out string path, out long source), "readable");
+            Harness.Equal(@"C:\docs\c.md", path, "path");
+            Harness.Equal(5150L, source, "source");
+        });
+
+        Harness.Test("another window takes the tab, this one keeps it", () =>
+        {
+            Harness.Equal(DragDropEffects.Move, TabDrag.Decide(fromThisWindow: false, alreadyOpenHere: false), "other window");
+            Harness.Equal(DragDropEffects.Move, TabDrag.Decide(fromThisWindow: false, alreadyOpenHere: true), "other window, already open");
+            Harness.Equal(DragDropEffects.Link, TabDrag.Decide(fromThisWindow: true, alreadyOpenHere: true), "own tab back");
+            Harness.Equal(DragDropEffects.None, TabDrag.Decide(fromThisWindow: true, alreadyOpenHere: false), "own tab, unknown file");
+        });
+
+        Harness.Test("a tab dropped from another window becomes a tab here", () =>
+        {
+            string file = WriteTemp("# Dropped\n\ntext\n");
+            using MainForm form = CreateForm(_ => { });
+            DragDropEffects effect = form.HandleTabDrop(file, sourceHandle: 999);
+
+            Harness.Equal(DragDropEffects.Move, effect, "effect");
+            Harness.Equal(1, form.TabCount, "one tab");
+        });
+
+        Harness.Test("dropping a tab back on its own window changes nothing", () =>
+        {
+            string file = WriteTemp("# Back\n");
+            using MainForm form = CreateForm(_ => { });
+            form.OpenFile(file);
+
+            DragDropEffects effect = form.HandleTabDrop(file, form.Handle.ToInt64());
+            Harness.Equal(DragDropEffects.Link, effect, "effect");
+            Harness.Equal(1, form.TabCount, "still one tab");
+        });
+
+        Harness.Test("a detached tab starts a window at the drop point", () =>
+        {
+            System.Diagnostics.ProcessStartInfo start = MainForm.BuildStartInfo(@"C:\bin\mdview.exe", null, @"C:\docs\a.md", new Point(5300, 240));
+            Harness.Equal(@"C:\bin\mdview.exe", start.FileName, "host");
+            Harness.Equal(@"C:\docs\a.md", start.ArgumentList[0], "file");
+            Harness.Equal("--position", start.ArgumentList[1], "switch");
+            Harness.Equal("5300,240", start.ArgumentList[2], "position");
+        });
+
+        Harness.Test("a dotnet host passes our assembly first", () =>
+        {
+            System.Diagnostics.ProcessStartInfo start = MainForm.BuildStartInfo(@"C:\dotnet\dotnet.exe", @"C:\app\mdview.dll", @"C:\docs\a.md", new Point(10, 20));
+            Harness.Equal(@"C:\app\mdview.dll", start.ArgumentList[0], "assembly");
+            Harness.Equal(@"C:\docs\a.md", start.ArgumentList[1], "file");
+        });
+
+        Harness.Suite("menu placement");
+
+        Harness.Test("a menu fits under its button", () =>
+        {
+            var button = new Rectangle(700, 100, 34, 34);
+            Rectangle fitted = TabDrag.FitMenu(button, new Size(202, 408), new Rectangle(0, 0, 2560, 1440));
+            Harness.Equal(new Point(700, 134), fitted.Location, "anchored at the button's bottom-left");
+        });
+
+        Harness.Test("a menu never leaves the monitor on the right", () =>
+        {
+            var button = new Rectangle(2540, 100, 34, 34);
+            Rectangle fitted = TabDrag.FitMenu(button, new Size(202, 408), new Rectangle(0, 0, 2560, 1440));
+            Harness.True(fitted.Right <= 2560, $"right {fitted.Right}");
+            Harness.Equal(100 + 34, fitted.Top, "still below the button");
+        });
+
+        Harness.Test("a menu near the bottom flips above its button", () =>
+        {
+            var button = new Rectangle(700, 1300, 34, 34);
+            Rectangle fitted = TabDrag.FitMenu(button, new Size(202, 408), new Rectangle(0, 0, 2560, 1440));
+            Harness.True(fitted.Bottom <= 1440, $"bottom {fitted.Bottom}");
+            Harness.True(fitted.Bottom <= button.Top, "above the button");
+        });
     }
 
     private static string WriteTemp(string text)

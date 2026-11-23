@@ -4,7 +4,7 @@
 pwsh -File build/build.ps1 -Task test     # everything below, exit code 0/1
 ```
 
-176 checks; the runner is a console executable (`mdview-tests.exe`) with no test
+188 checks; the runner is a console executable (`mdview-tests.exe`) with no test
 framework dependency.
 
 | Suite | Checks | What it protects |
@@ -15,7 +15,7 @@ framework dependency.
 | `math layout` | 7 | Box metrics: fractions taller than letters, raised/lowered scripts, growing fences, matrix width |
 | `theme` | 25 | WCAG contrast for every palette pair that carries text, both themes, plus registry detection |
 | `start-up defaults`, `theme gesture` | 7 | Rendered start-up, remember-mode switch, `--mode` precedence, one-click theme flip |
-| `view width`, `tabs` | 5 | 100/75/50 % narrowing, persisted choice, two documents in tabs, new-window start info |
+| `view width`, `tabs`, `dragged tabs`, `menu placement` | 17 | 100/75/50 % narrowing, persisted choice, two documents in tabs, tab payload across processes, drop effects, menu geometry |
 | `diagrams` + `mermaid:*` | 17 | Flowchart and six more diagram types, shapes, labels, dispatch, fallbacks |
 | `editor` | 4 | Insert/replace/selection, find hits, caret coordinates |
 | `extras` | 19 | Emphasis corners, reference links, definition lists, typography, line breaks, glossary, images |

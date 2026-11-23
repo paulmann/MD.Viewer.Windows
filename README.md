@@ -6,7 +6,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#requirements)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#what-it-deliberately-does-not-do)
-[![Tests](https://img.shields.io/badge/tests-176%20checks-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/tests-188%20checks-brightgreen)](docs/TESTING.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/paulmann/MD.Viewer.Windows?label=release)](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)
 
@@ -32,7 +32,7 @@ light and dark mode without a single web asset.
 | --- | --- |
 | **Three view modes** | Rendered · Source (read-only, highlighted) · Editor (with optional live preview) |
 | **Two themes** | Light and dark, plus *follow Windows* (`Ctrl+Shift+L` cycles) |
-| **Tabs** | Every document in one window; a preference opens new files in a separate window instead |
+| **Tabs** | Every document in one window; drag a tab to another monitor to give it its own window, drag it onto another window to make it a tab there |
 | **Outline** | Heading sidebar with scroll-spy, click to jump, `Ctrl+\` to toggle |
 | **Find** | `Ctrl+F` in every mode, with match count and next/previous |
 | **Zoom** | `Ctrl+wheel`, `Ctrl+plus/minus`, 60 %…260 %, remembered per session |
@@ -107,6 +107,26 @@ state that looks the same as the current one. **View → Theme → Follow Window
 system control, and the button then carries a dot to show that.
 
 ![Source mode](docs/img/source-light.png)
+
+---
+
+## Tabs and screens
+
+Every document lives in a tab. Tabs are meant to be moved around:
+
+* **Drag a tab to another monitor** — the document opens in its own window exactly where you
+  dropped it, and leaves the tab strip behind.
+* **Drag a tab onto another MD Viewer window** — it becomes a tab of that window (and disappears
+  from the source window). Dragging it back works the same way in reverse.
+* **Dropping a tab on its own window** changes nothing: no duplicate, no lost document.
+* An unsaved document is saved first; if it cannot be saved it stays where it was.
+
+New files open in tabs by default; **View → Settings…** (`Ctrl+,`) switches to *open in a new
+window* instead, and picks the view width. Middle-click closes a tab.
+
+The width button next to the magnifier cycles **100 % → 75 % → 50 %** of the pane. 100 % is measured
+*after* the outline sidebar, so a 2560-pixel screen is actually used instead of a narrow column.
+Menus always open on the monitor where the window lives, not on another one.
 
 ---
 
@@ -219,7 +239,7 @@ real, not for show:
 ```powershell
 # .NET 11 SDK (C# 15) required — see docs/BUILD.md for the exact version and the
 # two environment quirks this workspace has.
-pwsh -File build/build.ps1 -Task test      # build + 176 checks
+pwsh -File build/build.ps1 -Task test      # build + 188 checks
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (self-contained)
 ```
 

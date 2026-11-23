@@ -35,7 +35,11 @@ internal static partial class Program
             Console.WriteLine("MD Viewer " + (typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.2.1"));
             // A single-file bundle has no assembly path; a plain build does, and that
             // build needs .NET 11 on the machine — say so instead of claiming otherwise.
+            // IL3000 fires because the trim analyser assumes the path is wanted; the empty
+            // string is exactly the signal.
+#pragma warning disable IL3000
             bool bundled = string.IsNullOrEmpty(typeof(Program).Assembly.Location);
+#pragma warning restore IL3000
             Console.WriteLine(RuntimeInformation.FrameworkDescription + (bundled
                 ? "  (embedded in this file; no .NET installation required)"
                 : "  (development build: needs the .NET 11 runtime, use artifacts/publish/mdview.exe)"));
@@ -84,6 +88,13 @@ internal static partial class Program
         else if (options.Maximized)
         {
             form.WindowState = FormWindowState.Maximized;
+        }
+
+        if (options.Position is Point position)
+        {
+            // A tab dragged to another screen starts a window where it was dropped.
+            form.StartPosition = FormStartPosition.Manual;
+            form.Location = ClampToScreen(position, form.Size);
         }
 
         List<string> files = [];
@@ -210,6 +221,21 @@ internal static partial class Program
             };
         }
 
+        if (options.MenuDump)
+        {
+            form.Shown += (_, _) => form.BeginInvoke(() =>
+            {
+                using var bridge = new ConsoleBridge();
+                (Rectangle button, Rectangle menu) = form.ShowMenuAndDescribe();
+                Console.WriteLine("window  : " + form.Bounds);
+                Console.WriteLine("button  : " + button);
+                Console.WriteLine("menu    : " + menu);
+                Console.WriteLine("screen  : " + Screen.FromControl(form).Bounds);
+                Console.WriteLine("same screen: " + Screen.FromRectangle(button).Equals(Screen.FromRectangle(menu)));
+                form.Close();
+            });
+        }
+
         if (options.ScreenshotPath is { Length: > 0 } screenshot)
         {
             var capture = new System.Windows.Forms.Timer { Interval = Math.Max(100, options.ScreenshotDelay) };
@@ -314,6 +340,15 @@ internal static partial class Program
 
         Console.WriteLine($"{format}: {output} ({new FileInfo(output).Length} bytes)");
         return 0;
+    }
+
+    /// <summary>Keeps a requested window origin fully inside the virtual desktop.</summary>
+    private static Point ClampToScreen(Point origin, Size size)
+    {
+        Rectangle virtualScreen = SystemInformation.VirtualScreen;
+        int x = Math.Clamp(origin.X, virtualScreen.Left, Math.Max(virtualScreen.Left, virtualScreen.Right - size.Width));
+        int y = Math.Clamp(origin.Y, virtualScreen.Top, Math.Max(virtualScreen.Top, virtualScreen.Bottom - size.Height));
+        return new Point(x, y);
     }
 
     private static string WelcomeText()

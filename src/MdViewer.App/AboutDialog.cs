@@ -352,7 +352,10 @@ internal static class Diagnostics
     {
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("MD Viewer " + (typeof(Diagnostics).Assembly.GetName().Version?.ToString(3) ?? "1.2.1"));
+        // Empty for a single-file bundle — that is the signal, so IL3000 is expected.
+#pragma warning disable IL3000
         bool bundled = string.IsNullOrEmpty(typeof(Diagnostics).Assembly.Location);
+#pragma warning restore IL3000
         sb.AppendLine(RuntimeInformation.FrameworkDescription + (bundled
             ? "  (self-contained: the runtime is embedded, no .NET installation required)"
             : "  (development build: needs the .NET 11 runtime)"));

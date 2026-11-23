@@ -105,6 +105,19 @@ Two preferences change behaviour, not looks:
   restore and the command line always fill this window, so a second process is never spawned by
   accident.
 
+## Dragged tabs and the menu anchor
+
+* A tab drag carries `TabDrag.Format` (`MDViewer.Tab`, payload `handle\npath`) plus a prefixed text
+  fallback `MDViewer.Tab:handle:path`. Across processes OLE may hand the custom format over as a
+  `byte[]`/`MemoryStream`, so `TabDrag.TryRead` accepts all three shapes. The window handle is what
+  distinguishes “another window took it” (`Move` → the source closes its tab) from “dropped back on
+  my own window” (`Link` → nothing changes).
+* A drop with effect `None` means nobody accepted it: the document is saved (if needed) and opened
+  in a new window at `--position` of the drop point.
+* `MainForm.MenuAnchor()` returns **screen** coordinates and `ShowFileMenu()` verifies the dropdown
+  landed on the button's monitor; `TabDrag.FitMenu` is the pure placement helper covered by tests.
+  Never pass a client-relative point to `ToolStripDropDown.Show`.
+
 ## Performance notes
 
 * Layout is measured once per width/theme/zoom; `MarkdownRenderer.Invalidate()` is the reset.

@@ -42,7 +42,9 @@ Everything is optional. With no arguments the last session is restored (up to ei
 | `--print` | Open the print dialog with the document rendered |
 | `--screenshot <file>` | Show the window, capture the client area, exit (development) |
 | `--screenshot-delay <ms>` | Wait before capturing (default 700) |
+| `--position <x,y>` | Open the window at this screen position (used when a tab is dragged to another screen) |
 | `--ui-dump` | Print the live control geometry and exit (development) |
+| `--menu-dump` | Open the File menu, print the button and menu rectangles in screen coordinates, exit (development) |
 | `--theme-clicks <n>` | Press the theme button n times before a screenshot (development) |
 | `--width-clicks <n>` | Press the width button n times before a screenshot (development) |
 | `--scroll <px>` | Scroll the rendered view before a screenshot (development) |

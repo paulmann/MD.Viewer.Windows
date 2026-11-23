@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Globalization;
 
 namespace MdViewer.App;
@@ -94,6 +95,12 @@ public sealed class LaunchOptions
 
     /// <summary>Development: press the width button N times before a screenshot.</summary>
     public int? WidthClicks { get; set; }
+
+    /// <summary>Development: show the File menu, print its geometry and exit.</summary>
+    public bool MenuDump { get; set; }
+
+    /// <summary>Window position in screen coordinates (used when a tab is dragged to another screen).</summary>
+    public Point? Position { get; set; }
 
     public int ScreenshotDelay { get; set; } = 700;
 
@@ -339,6 +346,23 @@ public sealed class LaunchOptions
                     }
 
                     break;
+
+                case "--menu-dump":
+                    options.MenuDump = true;
+                    break;
+
+                case "--position":
+                {
+                    string[] parts = (NextValue() ?? string.Empty).Split(',');
+                    if (parts.Length == 2
+                        && int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int px)
+                        && int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int py))
+                    {
+                        options.Position = new Point(px, py);
+                    }
+
+                    break;
+                }
 
                 case "--scroll":
                     if (float.TryParse(NextValue(), NumberStyles.Float, CultureInfo.InvariantCulture, out float scrollPixels))
