@@ -38,6 +38,9 @@ public sealed class FontBook : IDisposable
         MonoFamily = Pick("Cascadia Mono", "Cascadia Code", "Consolas", "Lucida Console", "Courier New");
         SerifFamily = Pick("Cambria", "Georgia", "Times New Roman", "Segoe UI");
         EmojiFamily = Pick("Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI");
+        MathFamily = Pick("Cambria Math", "Cambria", "Segoe UI Symbol", "Segoe UI");
+        MathItalicFamily = Pick("Cambria", "Times New Roman", "Segoe UI");
+        MathMonospaceFamily = Pick("Cambria Math", "Cambria", "Consolas", "Courier New");
     }
 
     public float DpiScale { get; }
@@ -51,6 +54,14 @@ public sealed class FontBook : IDisposable
     public string SerifFamily { get; }
 
     public string EmojiFamily { get; }
+
+    /// <summary>Upright math face: symbols, digits, function names.</summary>
+    public string MathFamily { get; }
+
+    /// <summary>Italic face for variables (Cambria Math has no italic cut).</summary>
+    public string MathItalicFamily { get; }
+
+    public string MathMonospaceFamily { get; }
 
     private string Pick(params string[] candidates)
     {
@@ -69,7 +80,22 @@ public sealed class FontBook : IDisposable
     public Font Font(string family, float pixelSize, FontStyle style = FontStyle.Regular)
     {
         float size = Math.Max(4f, MathF.Round(pixelSize * DpiScale, 2));
-        string key = $"{family}|{size:0.##}|{(int)style}";
+        return Resolve("dip", family, size, style);
+    }
+
+    /// <summary>
+    /// Font sized in device pixels. The math typographer works purely in device pixels
+    /// (its em is the font size), so it must not be scaled a second time here.
+    /// </summary>
+    public Font PixelFont(string family, float pixelSize, FontStyle style = FontStyle.Regular)
+    {
+        float size = Math.Max(4f, MathF.Round(pixelSize, 2));
+        return Resolve("px", family, size, style);
+    }
+
+    private Font Resolve(string prefix, string family, float size, FontStyle style)
+    {
+        string key = $"{prefix}|{family}|{size:0.##}|{(int)style}";
         if (_fonts.TryGetValue(key, out Font? cached))
         {
             return cached;

@@ -1,0 +1,152 @@
+namespace MdViewer.Core.Formulas;
+
+/// <summary>
+/// TeX math syntax tree. The parser is deliberately independent of the renderer:
+/// layout and GDI+ painting live in <c>MdViewer.Render.Math</c>, so exports and
+/// future formats can walk the same tree.
+/// </summary>
+public abstract class MathNode;
+
+/// <summary>Atoms inside a row (spacing depends on <see cref="MathAtomKind"/>).</summary>
+public enum MathAtomKind
+{
+    Ordinary,
+    Binary,
+    Relation,
+    Open,
+    Close,
+    Punctuation,
+    LargeOperator,
+}
+
+public enum MathTextStyle
+{
+    Normal,
+    Upright,
+    Bold,
+    Italic,
+    BoldItalic,
+    Monospace,
+    Blackboard,
+    Script,
+    Fraktur,
+    SansSerif,
+}
+
+/// <summary>One character (or a ligature such as "∑") with its spacing class.</summary>
+public sealed class MathAtom(string text, MathAtomKind kind, bool italic = false) : MathNode
+{
+    public string Text { get; } = text;
+
+    public MathAtomKind Kind { get; } = kind;
+
+    /// <summary>Latin letters and lowercase Greek are italic by convention.</summary>
+    public bool Italic { get; } = italic;
+}
+
+/// <summary>Text set upright (\\text, \\mathrm, function names).</summary>
+public sealed class MathText(string text, MathTextStyle style = MathTextStyle.Upright) : MathNode
+{
+    public string Text { get; } = text;
+
+    public MathTextStyle Style { get; } = style;
+
+    public MathAtomKind Kind { get; init; } = MathAtomKind.Ordinary;
+}
+
+public sealed class MathRow(IReadOnlyList<MathNode> children) : MathNode
+{
+    public IReadOnlyList<MathNode> Children { get; } = children;
+
+    public static MathRow Empty { get; } = new([]);
+}
+
+public sealed class MathFraction(MathNode numerator, MathNode denominator, bool barred) : MathNode
+{
+    public MathNode Numerator { get; } = numerator;
+
+    public MathNode Denominator { get; } = denominator;
+
+    public bool Barred { get; } = barred;
+}
+
+public sealed class MathRadical(MathNode body, MathNode? index) : MathNode
+{
+    public MathNode Body { get; } = body;
+
+    public MathNode? Index { get; } = index;
+}
+
+public sealed class MathScripts(MathNode? baseNode, MathNode? sub, MathNode? sup) : MathNode
+{
+    public MathNode? Base { get; } = baseNode;
+
+    public MathNode? Sub { get; } = sub;
+
+    public MathNode? Sup { get; } = sup;
+}
+
+public sealed class MathLeftRight(string open, string close, MathNode body) : MathNode
+{
+    public string Open { get; } = open;
+
+    public string Close { get; } = close;
+
+    public MathNode Body { get; } = body;
+}
+
+public sealed class MathAccent(MathNode body, string mark, bool under) : MathNode
+{
+    public MathNode Body { get; } = body;
+
+    public string Mark { get; } = mark;
+
+    public bool Under { get; } = under;
+}
+
+public sealed class MathMatrix(
+    IReadOnlyList<IReadOnlyList<MathNode>> rows,
+    string open,
+    string close,
+    bool leftAligned) : MathNode
+{
+    public IReadOnlyList<IReadOnlyList<MathNode>> Rows { get; } = rows;
+
+    public string Open { get; } = open;
+
+    public string Close { get; } = close;
+
+    public bool LeftAligned { get; } = leftAligned;
+}
+
+public sealed class MathSpace(float em) : MathNode
+{
+    public float Em { get; } = em;
+}
+
+/// <summary>\\displaystyle / \\textstyle switch inside a formula.</summary>
+public sealed class MathStyle(bool display, MathNode body) : MathNode
+{
+    public bool Display { get; } = display;
+
+    public MathNode Body { get; } = body;
+}
+
+/// <summary>Construct the parser could not read: drawn as the source, never thrown.</summary>
+public sealed class MathUnsupported(string tex, string reason) : MathNode
+{
+    public string Tex { get; } = tex;
+
+    public string Reason { get; } = reason;
+}
+
+/// <summary>A whole formula: display math may contain several rows separated by \\\\ .</summary>
+public sealed class MathLines(IReadOnlyList<MathRow> rows, bool display)
+{
+    public IReadOnlyList<MathRow> Rows { get; } = rows;
+
+    public bool Display { get; } = display;
+
+    /// <summary>True when the parser had to give up somewhere (kept for diagnostics).</summary>
+    public bool HasErrors { get; init; }
+}

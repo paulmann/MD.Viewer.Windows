@@ -58,6 +58,12 @@ public sealed class DocumentView : Control
     /// <summary>Overrides the theme reading width (points at 100 % zoom).</summary>
     public float? ReadingWidthOverride { get; set; }
 
+    /// <summary>
+    /// Share of the free pane used by the reading column: 1 = 100 %, 0.75 = 75 %, 0.5 = 50 %.
+    /// 100 % is measured after the outline sidebar, so a wide screen is actually used.
+    /// </summary>
+    public float WidthFraction { get; set; } = 1f;
+
     public string? EmptyTitle { get; set; }
 
     public string? EmptyHint { get; set; }
@@ -247,14 +253,17 @@ public sealed class DocumentView : Control
         get
         {
             Theme theme = Renderer?.Theme ?? ThemeCatalog.Light;
-            float reading = (ReadingWidthOverride ?? theme.Type.MaxReadingWidth) * theme.Scale * DpiScale;
-            if (Renderer is not null)
+            float available = MathF.Max(240f, ClientSize.Width - 2f * PaddingX - 40f * DpiScale);
+
+            if (ReadingWidthOverride is float fixedWidth)
             {
-                reading = Math.Min(reading, theme.Type.MaxPageWidth * theme.Scale * DpiScale);
+                // An explicit width (--width) still wins, but it never overflows the pane.
+                float scaled = fixedWidth * theme.Scale * DpiScale;
+                return MathF.Max(240f, MathF.Min(scaled, available));
             }
 
-            float available = ClientSize.Width - 2f * PaddingX - 40f * DpiScale;
-            return MathF.Max(240f, Math.Min(reading, available));
+            float fraction = WidthFraction <= 0f ? 1f : MathF.Min(1f, WidthFraction);
+            return MathF.Max(240f, available * fraction);
         }
     }
 

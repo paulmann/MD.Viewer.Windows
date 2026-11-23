@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using MdViewer.Core.Markdown;
 using MdViewer.Render.Rendering;
 using MdViewer.Render.Text;
@@ -107,12 +108,17 @@ public sealed class TableVisual : BlockLayout
 
         CellAlign align = cell.EffectiveAlign;
         float lineTop = offsetY;
+
+        // A single glyph wider than the column would otherwise paint over the neighbour
+        // cell and past the table border.
+        GraphicsState state = ctx.G.Save();
+        ctx.G.SetClip(new RectangleF(x, y, width, height), CombineMode.Intersect);
         foreach (ShapedLine line in cell.Text.Lines)
         {
             float dx = align switch
             {
-                CellAlign.Center => x + (width - line.Width) / 2f,
-                CellAlign.Right => x + width - Ctx.Px(CellPadX) - line.Width,
+                CellAlign.Center => x + (width - MathF.Min(line.Width, contentWidth)) / 2f,
+                CellAlign.Right => x + width - Ctx.Px(CellPadX) - MathF.Min(line.Width, contentWidth),
                 _ => x + Ctx.Px(CellPadX),
             };
 
@@ -123,6 +129,8 @@ public sealed class TableVisual : BlockLayout
 
             lineTop += line.Height;
         }
+
+        ctx.G.Restore(state);
 
         _ = !bold || contentWidth >= 0;
     }

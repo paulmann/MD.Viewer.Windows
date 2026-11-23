@@ -6,7 +6,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#requirements)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#what-it-deliberately-does-not-do)
-[![Tests](https://img.shields.io/badge/tests-146%20checks-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/tests-176%20checks-brightgreen)](docs/TESTING.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/paulmann/MD.Viewer.Windows?label=release)](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)
 
@@ -32,10 +32,12 @@ light and dark mode without a single web asset.
 | --- | --- |
 | **Three view modes** | Rendered · Source (read-only, highlighted) · Editor (with optional live preview) |
 | **Two themes** | Light and dark, plus *follow Windows* (`Ctrl+Shift+L` cycles) |
-| **Tabs** | Open several documents; per-document scroll, caret and mode state |
+| **Tabs** | Every document in one window; a preference opens new files in a separate window instead |
 | **Outline** | Heading sidebar with scroll-spy, click to jump, `Ctrl+\` to toggle |
 | **Find** | `Ctrl+F` in every mode, with match count and next/previous |
 | **Zoom** | `Ctrl+wheel`, `Ctrl+plus/minus`, 60 %…260 %, remembered per session |
+| **Width** | One-click 100 % · 75 % · 50 % of the pane; 100 % is measured after the outline, so a wide screen is used |
+| **Formulas** | TeX typeset by our own engine — fractions, roots, scripts, matrices, cases, big operators with limits, stretched fences |
 | **Export** | Standalone HTML, plain text, PNG, Markdown copy — and Print (`Ctrl+P`) |
 | **Command line** | File, mode, theme, zoom, width, line, anchor, print, export, screenshot |
 | **Live reload** | Watches the file on disk and reloads it when it changes |
@@ -120,7 +122,11 @@ gracefully, is in **[docs/MARKDOWN.md](docs/MARKDOWN.md)**.
 * Lists: nested, ordered with start values, task lists with checkboxes
 * Block quotes, GitHub alerts (`> [!NOTE]` … `> [!CAUTION]`), definition lists
 * Footnotes (reference and inline), `[TOC]`, YAML front matter, emoji shortcodes
-* Math: `$inline$` and `$$display$$` through a TeX-subset typesetter
+* Math: `$inline$` and `$$display$$` typeset by our own TeX engine — real fractions, roots with
+  indices, raised/lowered scripts, `\left…\right` fences that grow, matrices (`matrix`, `pmatrix`,
+  `bmatrix`, `vmatrix`, `cases`, `aligned`), accents, `\mathbb`/`\mathcal`/`\mathfrak`, operators
+  with limits above and below. Unknown commands and environments show their source instead of
+  failing the page
 * Mermaid drawn natively — `flowchart`/`graph`, `sequenceDiagram`, `pie`, `classDiagram`,
   `stateDiagram-v2`, `gantt` and `journey`; unsupported types fall back to a readable source card
   with a diagnostic
@@ -213,7 +219,7 @@ real, not for show:
 ```powershell
 # .NET 11 SDK (C# 15) required — see docs/BUILD.md for the exact version and the
 # two environment quirks this workspace has.
-pwsh -File build/build.ps1 -Task test      # build + 146 checks
+pwsh -File build/build.ps1 -Task test      # build + 176 checks
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (self-contained)
 ```
 
@@ -239,7 +245,9 @@ samples/              Feature tour and a Russian typography sample
 * **Mermaid covers seven diagram types.** `erDiagram`, `gitGraph`, `mindmap`, `timeline`,
   `quadrantChart`, `sankey`, `xychart`, `C4` and `block` show their source with a clear note; a
   diagram that cannot be parsed never breaks the page.
-* **Math is a TeX subset**, not LaTeX: fractions, roots, sums, Greek letters, sub/superscripts.
+* **Formulas are a TeX subset**, not LaTeX: layout is produced by our own engine (no MathJax, no
+  KaTeX, no web fonts). Unknown commands, `\begin{}` environments we do not know and broken input
+  are printed as their source — a formula can never break the document.
   Unknown commands render as literal text rather than an error.
 
 ---

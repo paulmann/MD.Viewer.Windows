@@ -4,6 +4,45 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] — 2026-11-24
+
+Formulas are typeset by the viewer itself, wide screens are finally used, tables stay inside the
+page, and several documents can live in tabs or in separate windows.
+
+### Fixed
+
+- **Table text ran past the table border.** The column budget was `max(page width, sum of minimums)`,
+  so a table with long words grew wider than the sheet while the border was still drawn at the sheet
+  width — the last column's text spilled over the frame and the border cut through a column. Columns
+  are now pinned to the page (a proportional split with a 40 px floor when the minimums cannot fit),
+  the frame follows the columns, and every cell paints clipped to its rectangle. Long URLs are
+  broken inside the cell instead of pushing the table out.
+
+### Added
+
+- **Formulas (MathJax/KaTeX class, own engine).** `$inline$` and `$$block$$` are parsed into a TeX
+  syntax tree (`MdViewer.Core.Formulas`) and typeset by our own box model (`MdViewer.Render.Formulas`):
+  fractions, roots with indices, raised/lowered scripts, growing `\left…\right` fences, matrices
+  (`matrix`, `pmatrix`, `bmatrix`, `Bmatrix`, `vmatrix`, `Vmatrix`, `cases`, `aligned`, `array`),
+  accents and bars, `\text`, `\mathrm`/`\mathbf`/`\mathbb`/`\mathcal`/`\mathfrak`, function names,
+  large operators with limits above/below in display style, TeX spacing classes, and multi-line
+  display math. No MathJax, no KaTeX, no web fonts, no new dependency — Cambria Math ships with
+  Windows. Unreadable commands and environments fall back to their source and never throw.
+- **View width switch next to the magnifier**: 100 % · 75 % · 50 % of the free pane, one click each,
+  remembered in the settings. 100 % is measured after the outline sidebar, so the previous 720/980 px
+  cap no longer leaves half of a 2560 px screen empty. The same three states are in `View → View width`.
+- **Settings dialog** (`View → Settings…`, `Ctrl+,`): new files open in tabs (default) or in a new
+  window, the rendered width, *remember the last view mode*, and the outline sidebar. The tab strip
+  now compresses many pills instead of running off the window, and a middle click closes a tab.
+- Several files can be passed on the command line (`mdview a.md b.md`) — they open as tabs.
+- `--prefs-shot <png>`, `--width-clicks <n>` for the screenshot suite.
+
+### Changed
+
+- `--width <px>` still pins an explicit column, but it can no longer overflow the pane.
+- Test suite: 176 checks (table overflow at three widths, math parser and layout, width modes, tabs,
+  new-window start info).
+
 ## [1.3.3] — 2026-11-09
 
 Two habits of the interface that were wrong by default.

@@ -1,6 +1,8 @@
 using System.Drawing;
 using System.Text;
 using MdViewer.Core.Markdown;
+using MdViewer.Core.Formulas;
+using MdViewer.Render.Formulas;
 using MdViewer.Render.Media;
 using MdViewer.Render.Theming;
 
@@ -18,6 +20,7 @@ public sealed class InlineShaper(FontBook fonts, ImageCache images, Theme theme)
         Space,
         HardBreak,
         Image,
+        Math,
     }
 
     private sealed class Atom
@@ -28,6 +31,7 @@ public sealed class InlineShaper(FontBook fonts, ImageCache images, Theme theme)
         public float Width;
         public float Height;
         public ImageAsset? Image;
+        public MathBox? Math;
         public float SpaceWidth;
     }
 
@@ -180,13 +184,21 @@ public sealed class InlineShaper(FontBook fonts, ImageCache images, Theme theme)
 
             case MathInline math:
             {
+                // A formula is one unbreakable object laid out by the math typographer.
                 TextStyle child = style.Clone();
-                child.Family = fonts.SerifFamily;
-                child.SizeDip = style.SizeDip * 1.02f;
-                child.Font = fonts.Font(child.Family, child.SizeDip, FontStyle.Italic);
-                child.Color = style.Color;
-                string display = MathText.ToDisplay(math.Tex);
-                AddText(display, child, atoms, breakable: false);
+                child.Color = theme.Colors.Text;
+                float pixels = style.SizeDip * fonts.DpiScale;
+                MathLines parsed = MathParser.Parse(math.Tex, math.Display);
+                MathBox box = new MathLayout(fonts, theme.Colors.Text).Build(parsed, pixels * 1.02f, math.Display);
+                atoms.Add(new Atom
+                {
+                    Text = math.Tex,
+                    Style = child,
+                    Kind = AtomKind.Math,
+                    Width = box.Width,
+                    Height = box.Height,
+                    Math = box,
+                });
                 break;
             }
 
@@ -301,6 +313,13 @@ public sealed class InlineShaper(FontBook fonts, ImageCache images, Theme theme)
                     continue;
                 }
 
+                if (atom.Kind == AtomKind.Math && atom.Math is MathBox mathBox)
+                {
+                    ascent = MathF.Max(ascent, mathBox.Ascent);
+                    descent = MathF.Max(descent, mathBox.Depth);
+                    continue;
+                }
+
                 FontLineMetrics metrics = fonts.Metrics(atom.Style.Font);
                 ascent = MathF.Max(ascent, metrics.Ascent + atom.Style.BaselineShift);
                 descent = MathF.Max(descent, metrics.Descent - atom.Style.BaselineShift);
@@ -319,6 +338,22 @@ public sealed class InlineShaper(FontBook fonts, ImageCache images, Theme theme)
                         Height = atom.Height,
                         Ascent = atom.Height,
                         Baseline = ascent,
+                    });
+                    continue;
+                }
+
+                if (atom.Kind == AtomKind.Math && atom.Math is MathBox mathBox)
+                {
+                    shaped.Runs.Add(new Run
+                    {
+                        Text = atom.Text,
+                        Style = atom.Style,
+                        X = x,
+                        Width = mathBox.Width,
+                        Height = mathBox.Height,
+                        Ascent = mathBox.Ascent,
+                        Baseline = ascent,
+                        Math = mathBox,
                     });
                     continue;
                 }
@@ -380,7 +415,7 @@ public sealed class InlineShaper(FontBook fonts, ImageCache images, Theme theme)
                 pendingSpace = false;
             }
 
-            if (maxWidth > 0 && atom.Width > maxWidth && line.Count == 0)
+            if (maxWidth > 0 && atom.Width > maxWidth && line.Count == 0 && atom.Kind == AtomKind.Word)
             {
                 // a single token wider than the column: break it by characters
                 foreach ((string chunk, float chunkWidth) in SplitLongToken(atom, maxWidth))
@@ -430,6 +465,8 @@ public sealed class InlineShaper(FontBook fonts, ImageCache images, Theme theme)
             {
                 Run previous = merged[^1];
                 bool sameStyle = ReferenceEquals(previous.Style, run.Style)
+                    && previous.Math is null
+                    && run.Math is null
                     && previous.Style.Background is null
                     && run.Style.Background is null
                     && MathF.Abs(previous.X + previous.Width - run.X) < 0.6f;

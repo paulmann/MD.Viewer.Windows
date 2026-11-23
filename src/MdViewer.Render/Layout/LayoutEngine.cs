@@ -1,7 +1,9 @@
 using System.Drawing;
 using System.Globalization;
 using MdViewer.Core.Highlighting;
+using MdViewer.Core.Formulas;
 using MdViewer.Core.Markdown;
+using MdViewer.Render.Formulas;
 using MdViewer.Render.Media;
 using MdViewer.Render.Text;
 using MdViewer.Render.Theming;
@@ -398,25 +400,33 @@ public sealed class LayoutEngine
 
     private BlockLayout LayoutMath(MathBlock math, float left, float width, ref float y)
     {
-        float size = Type.BaseSize * 1.15f * _theme.Scale;
-        Font font = _fonts.Font(_fonts.SerifFamily, size, FontStyle.Italic);
-        TextStyle style = BodyStyle(font, size, _theme.Colors.Text);
-        string display = MathText.ToDisplay(math.Tex);
-        ShapedText shaped = _shaper.Shape([new TextInline(display)], width - Px(32f), style, 1.4f);
+        float pad = Px(18f);
+        float size = Type.BaseSize * 1.12f * _theme.Scale * _fonts.DpiScale;
+        MathLines lines = MathParser.Parse(math.Tex, display: true);
+        MathBox box = new MathLayout(_fonts, _theme.Colors.Text).Build(lines, size, display: true);
 
-        float height = shaped.Height + Px(28f);
+        // A long display formula shrinks until it fits the page instead of overflowing.
+        float available = MathF.Max(120f, width - pad * 2f);
+        for (int attempt = 0; attempt < 10 && box.Width > available && size > 9f; attempt++)
+        {
+            size *= 0.88f;
+            box = new MathLayout(_fonts, _theme.Colors.Text).Build(lines, size, display: true);
+        }
+
+        float height = box.Height + pad * 2f;
         var visual = new MathBlockVisual
         {
             Source = math,
             Ctx = _context,
-            Text = shaped,
+            Box = box,
+            Padding = pad,
             Top = y,
             Left = left,
             Width = width,
             Height = height,
         };
 
-        y += height;
+        y += height + Px(6f);
         return visual;
     }
 
@@ -568,7 +578,9 @@ public sealed class LayoutEngine
             }
 
             preferred[c] = maxWidth + padX;
-            minimum[c] = MathF.Max(maxWord + padX, Px(56f));
+            // A long unbroken token (a URL inside a cell) must not dictate the column:
+            // the shaper breaks it by characters, so the floor stays modest.
+            minimum[c] = MathF.Max(MathF.Min(maxWord + padX, Px(132f)), Px(48f));
         }
 
         float available = width;
@@ -586,21 +598,36 @@ public sealed class LayoutEngine
         }
         else
         {
+            // The table is never allowed to grow past the page: the previous code took
+            // MathF.Max(available, totalMinimum) as its budget, so wide tables spilled
+            // out of the sheet and their borders landed inside a column.
             float totalMinimum = minimum.Sum();
-            float budget = MathF.Max(available, totalMinimum);
-            float flexible = MathF.Max(0f, budget - totalMinimum);
-            float preferredExtra = preferred.Sum() - minimum.Sum();
-
-            for (int c = 0; c < columns; c++)
+            if (totalMinimum <= available)
             {
-                float share = preferredExtra <= 0 ? 1f / columns : (preferred[c] - minimum[c]) / preferredExtra;
-                widths[c] = minimum[c] + flexible * share;
+                float flexible = available - totalMinimum;
+                float preferredExtra = preferred.Sum() - totalMinimum;
+
+                for (int c = 0; c < columns; c++)
+                {
+                    float share = preferredExtra <= 0 ? 1f / columns : (preferred[c] - minimum[c]) / preferredExtra;
+                    widths[c] = minimum[c] + flexible * share;
+                }
+            }
+            else
+            {
+                float weightSum = preferred.Sum();
+                for (int c = 0; c < columns; c++)
+                {
+                    widths[c] = available * (weightSum <= 0 ? 1f / columns : preferred[c] / weightSum);
+                }
+
+                ClampColumns(widths, available, Px(40f));
             }
 
             float sum = widths.Sum();
-            if (sum > 0)
+            if (sum > 0 && MathF.Abs(sum - available) > 0.5f)
             {
-                float scale = budget / sum;
+                float scale = available / sum;
                 for (int c = 0; c < columns; c++)
                 {
                     widths[c] *= scale;
@@ -659,12 +686,65 @@ public sealed class LayoutEngine
             IsGlossary = table.IsGlossary,
             Top = y,
             Left = left,
-            Width = width,
+            // The drawn border follows the columns, not the page: they are equal by
+            // construction once the sum is pinned to the available width.
+            Width = widths.Sum(),
             Height = height,
         };
 
         y += height;
         return visual;
+    }
+
+    /// <summary>Keeps every column above <paramref name="floor"/> by taking width from the widest ones.</summary>
+    private static void ClampColumns(float[] widths, float available, float floor)
+    {
+        // Water-filling: raise the narrow columns to the floor, take the excess back
+        // from the others proportionally, and repeat in case another one fell below.
+        for (int pass = 0; pass < widths.Length; pass++)
+        {
+            bool raised = false;
+            float total = 0f;
+            for (int c = 0; c < widths.Length; c++)
+            {
+                if (widths[c] < floor)
+                {
+                    widths[c] = floor;
+                    raised = true;
+                }
+
+                total += widths[c];
+            }
+
+            if (!raised || total <= available)
+            {
+                return;
+            }
+
+            float excess = total - available;
+            float others = 0f;
+            for (int c = 0; c < widths.Length; c++)
+            {
+                if (widths[c] > floor)
+                {
+                    others += widths[c];
+                }
+            }
+
+            if (others <= 0)
+            {
+                return;
+            }
+
+            float scale = MathF.Max(0f, (others - excess) / others);
+            for (int c = 0; c < widths.Length; c++)
+            {
+                if (widths[c] > floor)
+                {
+                    widths[c] *= scale;
+                }
+            }
+        }
     }
 
     private Inline[] ParseCellInlines(string cell)

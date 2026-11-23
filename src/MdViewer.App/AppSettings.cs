@@ -13,6 +13,12 @@ public sealed class AppSettings
 
     public float Zoom { get; set; } = 1f;
 
+    /// <summary>Rendered width: <c>full</c> (100 % of the pane), <c>75</c> or <c>50</c>.</summary>
+    public string WidthMode { get; set; } = "full";
+
+    /// <summary>Open files in a new window instead of a tab (tabs are the default).</summary>
+    public bool OpenInNewWindow { get; set; }
+
     public float ReadingWidth { get; set; } = 720f;
 
     public bool Serif { get; set; }
@@ -148,6 +154,8 @@ public sealed class AppSettings
         Theme = "auto";
         Mode = "render";
         Zoom = 1f;
+        WidthMode = "full";
+        OpenInNewWindow = false;
         ReadingWidth = 720f;
         Serif = false;
         Outline = true;

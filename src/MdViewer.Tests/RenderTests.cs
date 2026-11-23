@@ -83,6 +83,52 @@ public static class RenderTests
             }
         });
 
+        Harness.Test("a wide table stays inside the page", () =>
+        {
+            // The owner's report: prose columns pushed the table past the sheet edge and
+            // the border landed inside a column.
+            string md = "| Роль | new.batterywizard.ru | bwl.ru | v4.bwl.ru |\n" +
+                        "|---|---|---|---|\n" +
+                        "| Стек | PHP 8.5 + Perl CGI, MySQL wizard_online на этом же домене уже отдаются `/bw2/` | PHP (динамический кабинет) + Python 3.14, read-only `wizard_online` | PHP 8.5 MVC без фреймворка, `public/BL` bwov1 |\n" +
+                        "| Данные | первоисточник 28 333 испытания, 122 млн измерений по ячейкам | читает BWO на чтение; пишет только `Testers` | своя копия архива в bwov_v4 |\n" +
+                        "| Состояние | прод ежедневная работа | прод коммерческая оболочка | alpha: 9 разделов, 31 PASS / 2 FAIL |\n";
+
+            foreach (float width in new[] { 520f, 760f, 1100f })
+            {
+                var (renderer, layout) = LayoutDocument(md, width);
+                using (renderer)
+                {
+                    var table = (TableVisual)layout.Blocks[0];
+                    Harness.True(table.Width <= width + 0.5f, $"table {table.Width} of {width}");
+                    Harness.True(MathF.Abs(table.ColumnWidths.Sum() - table.Width) < 1f, "border follows the columns");
+                    foreach (float column in table.ColumnWidths)
+                    {
+                        Harness.True(column >= 39f, $"column floor {column}");
+                    }
+
+                    foreach (TableCellVisual cell in table.Headers.Concat(table.Rows.SelectMany(r => r)))
+                    {
+                        foreach (ShapedLine line in cell.Text.Lines)
+                        {
+                            Harness.True(line.Width <= table.ColumnWidths.Max() + 40f, $"cell line {line.Width}");
+                        }
+                    }
+                }
+            }
+        });
+
+        Harness.Test("a long url inside a cell is broken, not spilled", () =>
+        {
+            string md = "| Параметр | Значение |\n|---|---|\n| Путь | `https://example.com/docs/architecture/very/long/path/that/should/be/broken/inside/the/cell.md` |\n";
+            var (renderer, layout) = LayoutDocument(md, 640f);
+            using (renderer)
+            {
+                var table = (TableVisual)layout.Blocks[0];
+                Harness.True(table.Width <= 640.5f, $"width {table.Width}");
+                Harness.True(table.Height > 0f, "laid out");
+            }
+        });
+
         Harness.Test("links are collected as regions", () =>
         {
             var (renderer, layout) = LayoutDocument("See [the site](https://example.com) and [local](other.md).");

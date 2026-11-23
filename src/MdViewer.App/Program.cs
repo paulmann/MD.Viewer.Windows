@@ -145,6 +145,29 @@ internal static partial class Program
             return 0;
         }
 
+        if (options.PrefsShot is { Length: > 0 } prefsShot)
+        {
+            Theme prefsTheme = ThemeCatalog.Resolve(settings.Theme).WithScale(settings.Zoom);
+            var prefs = new SettingsDialog(settings, settings.WidthMode, prefsTheme);
+            var prefsTimer = new System.Windows.Forms.Timer { Interval = 600 };
+            prefsTimer.Tick += (_, _) =>
+            {
+                prefsTimer.Stop();
+                try
+                {
+                    WindowCapture.Save(prefs, prefsShot, clientOnly: true);
+                    Console.WriteLine("prefs: " + prefsShot);
+                }
+                finally
+                {
+                    prefs.Close();
+                }
+            };
+            prefs.Shown += (_, _) => prefsTimer.Start();
+            Application.Run(prefs);
+            return 0;
+        }
+
         if (options.ThemeClicks is int clicks)
         {
             form.Shown += (_, _) =>
@@ -152,6 +175,17 @@ internal static partial class Program
                 for (int i = 0; i < clicks; i++)
                 {
                     form.ToggleTheme();
+                }
+            };
+        }
+
+        if (options.WidthClicks is int widthClicks)
+        {
+            form.Shown += (_, _) =>
+            {
+                for (int i = 0; i < widthClicks; i++)
+                {
+                    form.CycleWidth();
                 }
             };
         }

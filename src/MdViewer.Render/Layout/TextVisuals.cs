@@ -1,6 +1,7 @@
 using System.Drawing;
 using MdViewer.Core.Markdown;
 using MdViewer.Render.Media;
+using MdViewer.Render.Formulas;
 using MdViewer.Render.Rendering;
 using MdViewer.Render.Text;
 using MdViewer.Render.Theming;
@@ -179,28 +180,22 @@ public sealed class DividerVisual : BlockLayout
     }
 }
 
-/// <summary>Display math: centred serif text on a soft card.</summary>
+/// <summary>Display math: a centred formula on a soft card, typeset by the math engine.</summary>
 public sealed class MathBlockVisual : BlockLayout
 {
     public required LayoutContext Ctx { get; init; }
 
-    public required ShapedText Text { get; init; }
+    public required MathBox Box { get; init; }
+
+    public float Padding { get; init; }
 
     public override void Paint(PaintContext ctx)
     {
         var card = new RectangleF(Left, Top, Width, Height);
         ctx.FillRound(card, Ctx.Px(10f), Ctx.Colors.CodeBg);
 
-        float y = Top + Ctx.Px(14f);
-        foreach (ShapedLine line in Text.Lines)
-        {
-            foreach (Run run in line.Runs)
-            {
-                ctx.DrawRun(run, Left + (Width - line.Width) / 2f, y);
-            }
-
-            y += line.Height;
-        }
+        float x = Left + MathF.Max(Padding, (Width - Box.Width) / 2f);
+        Box.Paint(ctx, x, Top + Padding + Box.Ascent);
     }
 }
 

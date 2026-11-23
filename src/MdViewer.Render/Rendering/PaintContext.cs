@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using MdViewer.Render.Formulas;
 using MdViewer.Render.Text;
 using MdViewer.Render.Theming;
 
@@ -105,6 +106,12 @@ public sealed class PaintContext : IDisposable
         TextStyle style = run.Style;
         float x = dx + run.X;
         float y = dy + run.Baseline - run.Ascent;
+
+        if (run.Math is MathBox math)
+        {
+            math.Paint(this, x, dy + run.Baseline);
+            return;
+        }
 
         if (style.Background is Color background)
         {

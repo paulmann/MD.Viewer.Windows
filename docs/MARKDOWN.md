@@ -23,7 +23,7 @@ broken; **source** — shown as text in a labelled card.
 | `![alt](path "title")` alone | Figure with caption, width attribute honoured | full |
 | `Term` + `: Definition` | Definition list; several terms may share one definition | full |
 | `[TOC]` | Inline table of contents built from headings | full |
-| `$$ … $$` | Display math | full |
+| `$$ … $$` | Display math typeset by the built-in engine | full |
 | ` ```mermaid ` with `graph` / `flowchart` | Native flowchart: boxes, diamonds, arrows, edge labels | full |
 | ` ```mermaid ` with `sequenceDiagram` | Participants, lifelines, solid/dashed arrows, self-messages, notes, `loop`/`alt` frames, `autonumber` | full |
 | ` ```mermaid ` with `pie` | Pie chart with legend, percentages, optional `showData` values | full |
@@ -50,7 +50,7 @@ broken; **source** — shown as text in a labelled card.
 | `[x](javascript:…)` | Neutralised: link text kept, href dropped | graceful |
 | `:rocket:` and ~255 common shortcodes | Emoji | full |
 | `:not_a_code:` | Literal text | graceful |
-| `$e^{i\pi}+1=0$` | Inline math (TeX subset) | full |
+| `$e^{i\pi}+1=0$` | Inline math typeset by the built-in engine | full |
 | `$5 and $10` | Stays prose (currency rule) | full |
 | `\*escaped\*` | Literal characters | full |
 | `&amp;`, `&#8594;` | Decoded entities | full |
@@ -119,7 +119,18 @@ What is **not** implemented, so you can plan around it:
 * **Mermaid**: `erDiagram`, `gitGraph`, `mindmap`, `timeline`, `quadrantChart`, `sankey`,
   `xychart`, `C4` and `block` show source. Frames (`loop`/`alt`/`opt`) are labelled bands;
   `activate`/`deactivate` are ignored.
-* **Math is a TeX subset**: no matrices, `\begin{}` environments or multi-line alignment.
+* **Formulas are a TeX subset**, checked by our own parser and typesetter (no MathJax, no KaTeX).
+  Supported: `\frac`/`\dfrac`/`\tfrac`, `\binom`, `\sqrt[n]{}`, `^`/`_` (also together), `\left…\right`
+  with all fences, `\overline`/`\underline`/`\hat`/`\bar`/`\vec`/`\dot`/`\ddot`/`\tilde`/`\check`,
+  `\text`/`\mathrm`/`\mathbf`/`\mathit`/`\mathtt`/`\mathsf`/`\mathbb`/`\mathcal`/`\mathfrak`,
+  `\operatorname`, function names (`\sin`, `\log`, `\lim`, `\max`, …), large operators with limits in
+  display style, `matrix`/`pmatrix`/`bmatrix`/`Bmatrix`/`vmatrix`/`Vmatrix`/`cases`/`aligned`/`array`,
+  `\\` row breaks, `&` alignment, `\qquad`/`\quad`/`\,`/`\;`/`\:`/`\!`/`\hspace`, and the usual
+  Greek/symbol/arrow/relation tables.
+  Not supported: `\label`/`\tag`, colours are parsed and ignored, and unknown commands or
+  environments are printed as their source. A formula never throws — bad input degrades to text.
+  The screen, the printer and the PNG export share the same typeset layout; the HTML export keeps
+  the TeX source (`<span class="math-inline">`) so it can be fed to a web renderer later.
 
 ## Where it lives
 

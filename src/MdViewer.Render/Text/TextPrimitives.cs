@@ -1,4 +1,5 @@
 using System.Drawing;
+using MdViewer.Render.Formulas;
 
 namespace MdViewer.Render.Text;
 
@@ -88,6 +89,9 @@ public sealed class Run
     /// <summary>Font ascent above the baseline, in pixels.</summary>
     public float Ascent { get; set; }
 
+    /// <summary>Set for a formula: the run paints a math box instead of text.</summary>
+    public MathBox? Math { get; set; }
+
     public float PaddingX => Style.PaddingX;
 
     public RectangleF Bounds => new(X, Baseline - Ascent, Width, Height);
@@ -100,6 +104,8 @@ public sealed class Run
         Width = Width,
         Baseline = Baseline,
         Height = Height,
+        Ascent = Ascent,
+        Math = Math,
     };
 }
 

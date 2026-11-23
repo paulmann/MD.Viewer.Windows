@@ -52,6 +52,7 @@ public sealed class MainForm : Form
     private readonly ToolButton _btnSearch;
     private readonly ToolButton _btnZoomOut;
     private readonly ToolButton _btnZoomIn;
+    private readonly ToolButton _btnWidth;
     private readonly ToolButton _btnTheme;
     private readonly ToolButton _btnMore;
     private readonly ModeSwitcher _modes;
@@ -80,6 +81,9 @@ public sealed class MainForm : Form
     private bool _wrapCode;
     private bool _numbering;
 
+    /// <summary>Rendered width: <c>full</c>, <c>75</c> or <c>50</c> (percent of the free pane).</summary>
+    private string _widthMode;
+
     public MainForm(AppSettings settings, LaunchOptions? launch = null)
     {
         LaunchOptions options = launch ?? new LaunchOptions();
@@ -98,6 +102,7 @@ public sealed class MainForm : Form
         _mode = options.Mode ?? (settings.RememberMode ? ParseMode(settings.Mode) : ViewMode.Rendered);
         _outlineVisible = options.ToggleOutline ?? settings.Outline;
         _previewVisible = settings.EditorPreview;
+        _widthMode = NormalizeWidthMode(settings.WidthMode);
 
         _renderer = new MarkdownRenderer(_theme, DeviceDpi / 96f)
         {
@@ -126,6 +131,8 @@ public sealed class MainForm : Form
         _btnSearch = NewButton(IconKind.Search, L.T("find.placeholder"), () => ShowFind());
         _btnZoomOut = NewButton(IconKind.Minus, L.T("menu.zoomOut"), () => SetZoom(_theme.Scale - 0.1f));
         _btnZoomIn = NewButton(IconKind.Plus, L.T("menu.zoomIn"), () => SetZoom(_theme.Scale + 0.1f));
+        _btnWidth = NewButton(IconKind.Width, L.T("menu.width.tip"), CycleWidth);
+        _btnWidth.Label = WidthLabel(_widthMode);
         _btnTheme = NewButton(IconKind.Auto, L.T("menu.theme.tip"), ToggleTheme);
         _btnMore = NewButton(IconKind.More, L.T("menu.file"), ShowMenu);
 
@@ -145,7 +152,9 @@ public sealed class MainForm : Form
         _outline.AnchorActivated += (_, id) => NavigateToAnchor(id);
 
         _view = new DocumentView { Renderer = _renderer, Dock = DockStyle.None };
-        _view.ReadingWidthOverride = options.ReadingWidth ?? settings.ReadingWidth;
+        // --width pins an explicit column; otherwise the toolbar decides between 100/75/50 %.
+        _view.ReadingWidthOverride = options.ReadingWidth;
+        _view.WidthFraction = WidthFraction(_widthMode);
         _view.LinkActivated += (_, url) => HandleLink(url);
         _view.ScrollChanged += (_, _) => OnViewScrolled();
         _view.ZoomRequested += (_, direction) => SetZoom(_theme.Scale + direction * 0.1f, fromWheel: true);
@@ -190,6 +199,17 @@ public sealed class MainForm : Form
     }
 
     public int SessionCount => _sessions.Count;
+
+    /// <summary>Live tab pills (development / tests).</summary>
+    public int TabCount => _tabs.Tabs.Count;
+
+    public bool TabsVisible => _tabs.Visible;
+
+    /// <summary>True when the layout gives the tab strip room (two or more documents).</summary>
+    public bool TabsRequested => _sessions.Count > 1;
+
+    /// <summary>Content width the rendered view is laying out for, in device pixels.</summary>
+    public float MeasuredWidth => _view.MeasuredContentWidth;
 
     // ------------------------------------------------------------------- UI
 
@@ -311,10 +331,11 @@ public sealed class MainForm : Form
         _modes.Bounds = new Rectangle(0, 0, modesSize.Width + (int)(6 * dpi), (int)(34 * dpi));
 
         int right = ClientSize.Width - (int)(10 * dpi);
-        void PlaceRight(ToolButton button)
+        void PlaceRight(ToolButton button, Size? explicitSize = null)
         {
-            button.Size = new Size((int)(34 * dpi), (int)(34 * dpi));
-            right -= button.Width;
+            Size size = explicitSize ?? new Size((int)(34 * dpi), (int)(34 * dpi));
+            button.Size = size;
+            right -= size.Width;
             button.Location = new Point(right, y);
             right -= gap;
         }
@@ -323,6 +344,11 @@ public sealed class MainForm : Form
         PlaceRight(_btnTheme);
         PlaceRight(_btnZoomIn);
         PlaceRight(_btnZoomOut);
+
+        // The width switch sits next to the magnifier and carries its own percentage label.
+        Size widthSize = _btnWidth.GetPreferredSize(Size.Empty);
+        PlaceRight(_btnWidth, new Size(Math.Max((int)(34 * dpi), widthSize.Width), (int)(34 * dpi)));
+
         PlaceRight(_btnSearch);
 
         int centerX = (_toolbar.Width - _modes.Width) / 2;
@@ -707,6 +733,66 @@ public sealed class MainForm : Form
         HideFind();
     }
 
+    /// <summary>
+    /// Width switch next to the magnifier: 100 % of the free pane → 75 % → 50 % → 100 %.
+    /// 100 % is measured after the outline sidebar, so a 2560-pixel screen really is used.
+    /// </summary>
+    public void CycleWidth() => SetWidthMode(NextWidthMode(_widthMode), persist: true);
+
+    /// <param name="persist">True for the toolbar gesture and the settings dialog.</param>
+    public void SetWidthMode(string mode, bool persist)
+    {
+        _widthMode = NormalizeWidthMode(mode);
+        if (persist)
+        {
+            _settings.WidthMode = _widthMode;
+        }
+
+        _view.WidthFraction = WidthFraction(_widthMode);
+        _view.RebindLayout();
+        UpdateWidthButton();
+        LayoutToolbar(DeviceDpi / 96f);
+        UpdateStatus();
+    }
+
+    private void UpdateWidthButton()
+    {
+        _btnWidth.Label = WidthLabel(_widthMode);
+        _btnWidth.ToolTipText = L.T("menu.width.tip");
+        _btnWidth.Active = _widthMode != "full";
+        _btnWidth.Invalidate();
+    }
+
+    public string CurrentWidthMode => _widthMode;
+
+    private static string NormalizeWidthMode(string? mode) => mode switch
+    {
+        "75" or "three-quarters" => "75",
+        "50" or "half" => "50",
+        _ => "full",
+    };
+
+    private static float WidthFraction(string mode) => mode switch
+    {
+        "75" => 0.75f,
+        "50" => 0.5f,
+        _ => 1f,
+    };
+
+    private static string NextWidthMode(string mode) => mode switch
+    {
+        "full" => "75",
+        "75" => "50",
+        _ => "full",
+    };
+
+    private static string WidthLabel(string mode) => mode switch
+    {
+        "75" => "75%",
+        "50" => "50%",
+        _ => "100%",
+    };
+
     private void SetZoom(float zoom, bool fromWheel = false, bool persist = true)
     {
         float clamped = Math.Clamp(MathF.Round(zoom * 20f) / 20f, 0.6f, 2.6f);
@@ -775,7 +861,7 @@ public sealed class MainForm : Form
         _find.ApplyTheme(_theme, _renderer.Fonts);
         _modes.ApplyTheme(_theme, _renderer.Fonts);
 
-        foreach (ToolButton button in new[] { _btnOutline, _btnOpen, _btnSave, _btnSearch, _btnZoomIn, _btnZoomOut, _btnTheme, _btnMore })
+        foreach (ToolButton button in new[] { _btnOutline, _btnOpen, _btnSave, _btnSearch, _btnWidth, _btnZoomIn, _btnZoomOut, _btnTheme, _btnMore })
         {
             button.ApplyTheme(_theme, _renderer.Fonts);
         }
@@ -916,7 +1002,7 @@ public sealed class MainForm : Form
         string extension = Path.GetExtension(candidate).ToLowerInvariant();
         if (extension is ".md" or ".markdown" or ".txt")
         {
-            OpenFile(candidate);
+            OpenFromShell(candidate);
         }
         else
         {
@@ -1102,8 +1188,68 @@ public sealed class MainForm : Form
 
         foreach (string file in dialog.FileNames)
         {
-            OpenFile(file);
+            OpenFromShell(file);
         }
+    }
+
+    /// <summary>Opening from the UI honours the tabs / new-window preference; start-up never does.</summary>
+    private void OpenFromShell(string path)
+    {
+        if (_settings.OpenInNewWindow && LaunchInNewWindow(path))
+        {
+            return;
+        }
+
+        OpenFile(path);
+    }
+
+    private static bool LaunchInNewWindow(string path)
+    {
+        string? exe = Environment.ProcessPath;
+        if (string.IsNullOrEmpty(exe))
+        {
+            return false;
+        }
+
+        try
+        {
+            Process.Start(NewWindowStart(exe, path));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("new window failed: " + ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>Start info for the "open in a new window" preference (also used by tests).</summary>
+    public static ProcessStartInfo NewWindowStart(string exe, string path)
+    {
+        var start = new ProcessStartInfo(exe) { UseShellExecute = true };
+        start.ArgumentList.Add(path);
+        return start;
+    }
+
+    private void ShowPreferences()
+    {
+        using var dialog = new SettingsDialog(_settings, _widthMode, _theme);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        _settings.OpenInNewWindow = dialog.OpenInNewWindow;
+        _settings.RememberMode = dialog.RememberLastMode;
+        _settings.Save();
+
+        if (dialog.ShowOutline != _outlineVisible)
+        {
+            ToggleOutline();
+        }
+
+        SetWidthMode(dialog.WidthMode, persist: true);
+        _settings.Save();
     }
 
     private void ShowMenu()
@@ -1185,6 +1331,26 @@ public sealed class MainForm : Form
             _view.RebindLayout();
             ApplyTheme(persist: true);
         });
+        foreach (string mode in new[] { "full", "75", "50" })
+        {
+            string captured = mode;
+            var item = new ToolStripMenuItem(WidthLabel(mode) + "  ·  " + L.T("menu.width"))
+            {
+                Checked = _widthMode == mode,
+            };
+            item.Click += (_, _) =>
+            {
+                SetWidthMode(captured, persist: true);
+                _settings.Save();
+            };
+            view.DropDownItems.Add(item);
+        }
+
+        AddViewItem(view, L.T("menu.newWindow"), _settings.OpenInNewWindow, () =>
+        {
+            _settings.OpenInNewWindow = !_settings.OpenInNewWindow;
+            _settings.Save();
+        });
         menu.Items.Add(view);
 
         var theme = new ToolStripMenuItem(L.T("menu.theme"));
@@ -1210,6 +1376,7 @@ public sealed class MainForm : Form
         menu.Items.Add(theme);
         Separator();
         Add(L.T("menu.shortcuts"), ShowShortcuts, Keys.F1);
+        Add(L.T("menu.preferences"), ShowPreferences, Keys.Control | Keys.Oemcomma);
         Add(L.T("menu.settings"), () => OpenExternal(_settings.Directory), Keys.None);
         Add(L.T("menu.about"), ShowAbout, Keys.None);
         Separator();
@@ -1683,7 +1850,7 @@ public sealed class MainForm : Form
                 || file.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
                 || file.EndsWith(".mdown", StringComparison.OrdinalIgnoreCase))
             {
-                OpenFile(file);
+                OpenFromShell(file);
             }
         }
     }

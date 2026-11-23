@@ -80,6 +80,9 @@ public sealed class LaunchOptions
     /// <summary>Development: capture the About dialog and exit.</summary>
     public string? AboutShot { get; set; }
 
+    /// <summary>Development: capture the Settings dialog and exit.</summary>
+    public string? PrefsShot { get; set; }
+
     /// <summary>Development: write the application .ico and exit.</summary>
     public string? SaveIcon { get; set; }
 
@@ -88,6 +91,9 @@ public sealed class LaunchOptions
 
     /// <summary>Development: press the theme button N times before a screenshot.</summary>
     public int? ThemeClicks { get; set; }
+
+    /// <summary>Development: press the width button N times before a screenshot.</summary>
+    public int? WidthClicks { get; set; }
 
     public int ScreenshotDelay { get; set; } = 700;
 
@@ -326,6 +332,14 @@ public sealed class LaunchOptions
 
                     break;
 
+                case "--width-clicks":
+                    if (int.TryParse(NextValue(), out int widthClicks) && widthClicks >= 0)
+                    {
+                        options.WidthClicks = widthClicks;
+                    }
+
+                    break;
+
                 case "--scroll":
                     if (float.TryParse(NextValue(), NumberStyles.Float, CultureInfo.InvariantCulture, out float scrollPixels))
                     {
@@ -340,6 +354,10 @@ public sealed class LaunchOptions
 
                 case "--about-shot":
                     options.AboutShot = NextValue();
+                    break;
+
+                case "--prefs-shot":
+                    options.PrefsShot = NextValue();
                     break;
 
                 case "--screenshot":

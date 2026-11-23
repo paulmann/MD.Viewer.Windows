@@ -28,6 +28,7 @@ changes it for the screen, the printer and the exporter at the same time.
 | `Ast` | `closed` hierarchies `Block` / `Inline` — exhaustive switches are compiler-checked |
 | `SyntaxHighlighter` | Line tokenizer + language families, stateful for block comments and multi-line strings |
 | `MermaidFlowchart` | Flowchart subset parser: nodes, shapes, edges, labels |
+| `MathParser`, `MathSymbols`, `MathNode` | TeX reader: fractions, roots, scripts, fences, matrices, accents, operators; never throws, unreadable input becomes a node that prints itself |
 | `HtmlExporter` | Self-contained HTML with embedded CSS and token classes |
 | `PlainTextExporter` | Structure-preserving plain text (copy, export) |
 
@@ -38,6 +39,7 @@ changes it for the screen, the printer and the exporter at the same time.
 | `Theme`, `Palette`, `Typography`, `ThemeCatalog` | Design tokens, light/dark palettes, system theme detection |
 | `FontBook` | Cached fonts (pixel units), measurement cache, font-file fallbacks |
 | `InlineShaper` | Turns inline nodes into `ShapedText` — wrapping, mixed fonts, pills, images, math |
+| `MathLayout`, `MathBox` subclasses | Math typography: measures a formula into boxes with width/ascent/depth and paints them (`MathGlyphBox`, `MathFractionBox`, `MathScriptBox`, `MathDelimiterBox`, `MathMatrixBox`…) |
 | `LayoutEngine` | Measures blocks into absolutely positioned `BlockLayout` objects |
 | `BlockLayout` subclasses | Text, heading, code, table, list, quote, alert, image, diagram, footnotes, TOC… |
 | `PaintContext` | Cached brushes/pens, run painting, rounded paths |

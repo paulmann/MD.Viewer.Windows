@@ -42,7 +42,11 @@ Everything is optional. With no arguments the last session is restored (up to ei
 | `--print` | Open the print dialog with the document rendered |
 | `--screenshot <file>` | Show the window, capture the client area, exit (development) |
 | `--screenshot-delay <ms>` | Wait before capturing (default 700) |
-| `--ui-dump` | Print the live control geometry and exit (development) |\n| `--theme-clicks <n>` | Press the theme button n times before a screenshot (development) |\n| `--scroll <px>` | Scroll the rendered view before a screenshot (development) |
+| `--ui-dump` | Print the live control geometry and exit (development) |
+| `--theme-clicks <n>` | Press the theme button n times before a screenshot (development) |
+| `--width-clicks <n>` | Press the width button n times before a screenshot (development) |
+| `--scroll <px>` | Scroll the rendered view before a screenshot (development) |
+| `--prefs-shot <file>` | Capture the Settings dialog and exit (development) |
 
 ## Other
 

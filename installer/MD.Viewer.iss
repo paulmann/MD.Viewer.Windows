@@ -12,7 +12,7 @@
 
 #define AppName        "MD Viewer"
 #ifndef AppVersion
-  #define AppVersion   "1.3.3"
+  #define AppVersion   "1.4.0"
 #endif
 #ifndef PayloadFile
   #define PayloadFile  "..\artifacts\publish\mdview.exe"

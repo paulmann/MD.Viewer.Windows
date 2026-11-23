@@ -30,6 +30,7 @@ public enum IconKind
     External,
     Check,
     Save,
+    Width,
 }
 
 /// <summary>Vector icons drawn with GDI+ — no image assets, crisp at any DPI.</summary>
@@ -164,6 +165,17 @@ internal static class Icons
                         new PointF(x + w * 0.8f, y + h * 0.72f),
                         new PointF(x + w * 0.8f, y + h * 0.36f),
                     ]);
+                    break;
+
+                case IconKind.Width:
+                    // Two page edges with a measuring arrow between them.
+                    g.DrawLine(pen, x + w * 0.18f, y + h * 0.24f, x + w * 0.18f, y + h * 0.76f);
+                    g.DrawLine(pen, x + w * 0.82f, y + h * 0.24f, x + w * 0.82f, y + h * 0.76f);
+                    g.DrawLine(pen, x + w * 0.26f, y + h * 0.5f, x + w * 0.74f, y + h * 0.5f);
+                    g.DrawLine(pen, x + w * 0.26f, y + h * 0.5f, x + w * 0.36f, y + h * 0.41f);
+                    g.DrawLine(pen, x + w * 0.26f, y + h * 0.5f, x + w * 0.36f, y + h * 0.59f);
+                    g.DrawLine(pen, x + w * 0.74f, y + h * 0.5f, x + w * 0.64f, y + h * 0.41f);
+                    g.DrawLine(pen, x + w * 0.74f, y + h * 0.5f, x + w * 0.64f, y + h * 0.59f);
                     break;
 
                 case IconKind.Refresh:

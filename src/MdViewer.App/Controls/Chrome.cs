@@ -343,9 +343,26 @@ public sealed class TabStrip : ChromeControl
         var widths = new List<RectangleF>();
         Font font = UiFont(12.2f);
         float x = S(10f);
-        foreach (TabItem tab in Tabs)
+        float available = MathF.Max(S(120f), ClientSize.Width - S(20f));
+        int count = Math.Max(1, Tabs.Count);
+
+        // Many documents must stay reachable: the pills shrink down to a floor instead of
+        // running off the right edge of the window.
+        float natural = 0f;
+        var preferred = new float[Tabs.Count];
+        for (int i = 0; i < Tabs.Count; i++)
         {
-            float width = MathF.Min(S(220f), Fonts.Measure(tab.Title, font) + S(56f));
+            preferred[i] = MathF.Min(S(220f), Fonts.Measure(Tabs[i].Title, font) + S(56f));
+            natural += preferred[i];
+        }
+
+        float budget = natural + S(4f) * MathF.Max(0, Tabs.Count - 1);
+        float scale = budget > available ? available / budget : 1f;
+        float floor = MathF.Min(S(96f), available / count);
+
+        for (int i = 0; i < Tabs.Count; i++)
+        {
+            float width = MathF.Max(floor, preferred[i] * scale);
             widths.Add(new RectangleF(x, S(4f), width, ClientSize.Height - S(4f)));
             x += width + S(4f);
         }
@@ -476,6 +493,12 @@ public sealed class TabStrip : ChromeControl
         }
 
         if (onClose)
+        {
+            TabClosed?.Invoke(this, index);
+            return;
+        }
+
+        if (e.Button == MouseButtons.Middle)
         {
             TabClosed?.Invoke(this, index);
             return;
