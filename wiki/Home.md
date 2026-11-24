@@ -13,7 +13,7 @@ installer 34.8 MB · portable exe 50 MB
 | **Themes** | Light, dark, and *follow Windows* — one click flips the appearance |
 | **Tabs** | Every document in a tab; drag a tab to another monitor to give it its own window, drag it onto another window to make it a tab there |
 | **Width** | 100 % / 75 % / 50 % of the pane next to the magnifier; 100 % is measured after the outline |
-| **Formulas** | TeX typeset by the built-in engine: fractions, roots, scripts, matrices, cases, limits, growing fences |
+| **Formulas** | TeX typeset by the built-in engine: fractions, roots, scripts, matrices, cases, limits, growing fences. The **vocabulary is KaTeX/MathJax** — ~210 symbols and the whole command set |
 | **Diagrams** | Mermaid drawn natively: flowchart, sequence, pie, class, state, gantt, journey |
 | **Export** | Standalone HTML, plain text, PNG, Markdown copy, print |
 | **Command line** | File(s), mode, theme, zoom, width, line, anchor, print, export |
@@ -23,7 +23,7 @@ installer 34.8 MB · portable exe 50 MB
 
 * **[Getting Started](Getting-Started)** — install, first run, keyboard.
 * **[Tabs and Screens](Tabs-and-Screens)** — moving documents between windows and monitors.
-* **[Formulas](Formulas)** — what the TeX engine typesets and what it refuses.
+* **[Formulas](Formulas)** — what the TeX engine typesets, command by command.
 * **[Markdown Support](Markdown-Support)** — the construct-by-construct matrix.
 * **[Command Line](Command-Line)** — every switch.
 * **[Building](Building)** — toolchain, tasks, and the traps of this workspace.

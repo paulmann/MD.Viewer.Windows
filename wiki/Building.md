@@ -12,7 +12,7 @@ Zero dependencies, no NuGet packages, no binary assets: `dotnet list package` mu
 
 ```powershell
 pwsh -File build/build.ps1 -Task build      # compile everything
-pwsh -File build/build.ps1 -Task test       # build + 188 checks
+pwsh -File build/build.ps1 -Task test       # build + 193 checks
 pwsh -File build/build.ps1 -Task publish    # self-contained single-file mdview.exe (52 MB)
 pwsh -File build/build.ps1 -Task installer  # Inno Setup package (needs Inno Setup 6)
 pwsh -File build/build.ps1 -Task shots      # UI smoke suite (needs a desktop session)

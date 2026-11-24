@@ -13,7 +13,7 @@ CommonMark core plus the GFM and MD.Scribe extensions. The contract, including w
 | Quotes | quotes and GitHub alerts (`> [!NOTE]` … `> [!CAUTION]`) |
 | Footnotes | reference and inline, collected at the bottom |
 | Extras | `[TOC]`, YAML front matter, definition lists, emoji shortcodes (255), typographic replacements |
-| Formulas | `$inline$`, `$$display$$` — see [Formulas](Formulas) |
+| Formulas | `$inline$`, `$$display$$` — the KaTeX/MathJax vocabulary, see [Formulas](Formulas) |
 | Diagrams | Mermaid: `flowchart`/`graph`, `sequenceDiagram`, `pie`, `classDiagram`, `stateDiagram-v2`, `gantt`, `journey` |
 | Images | resolved relative to the document, captions from alt text, placeholder when missing |
 
@@ -23,6 +23,9 @@ CommonMark core plus the GFM and MD.Scribe extensions. The contract, including w
   a missing feature.
 * **Nothing is fetched from the network.** Remote images are marked as not loaded; the application
   makes no requests at all.
+* **Math is a vocabulary, not an engine.** The commands are the ones KaTeX/MathJax accept; the
+  typesetting is ours, so nothing is downloaded and nothing is evaluated. Numbering and colours are
+  parsed but not drawn.
 * Unsupported Mermaid types (`erDiagram`, `gitGraph`, `mindmap`, `timeline`, `quadrantChart`,
   `sankey`, `xychart`, `C4`, `block`) show a source card with a diagnostic instead of breaking the
   page.

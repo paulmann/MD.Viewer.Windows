@@ -6,7 +6,7 @@
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6)](#requirements)
 [![.NET](https://img.shields.io/badge/.NET-11%20%2F%20C%23%2015-512BD4)](#c-15)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](#what-it-deliberately-does-not-do)
-[![Tests](https://img.shields.io/badge/tests-188%20checks-brightgreen)](docs/TESTING.md)
+[![Tests](https://img.shields.io/badge/tests-193%20checks-brightgreen)](docs/TESTING.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/paulmann/MD.Viewer.Windows?label=release)](https://github.com/paulmann/MD.Viewer.Windows/releases/latest)
 
@@ -142,11 +142,14 @@ gracefully, is in **[docs/MARKDOWN.md](docs/MARKDOWN.md)**.
 * Lists: nested, ordered with start values, task lists with checkboxes
 * Block quotes, GitHub alerts (`> [!NOTE]` … `> [!CAUTION]`), definition lists
 * Footnotes (reference and inline), `[TOC]`, YAML front matter, emoji shortcodes
-* Math: `$inline$` and `$$display$$` typeset by our own TeX engine — real fractions, roots with
-  indices, raised/lowered scripts, `\left…\right` fences that grow, matrices (`matrix`, `pmatrix`,
-  `bmatrix`, `vmatrix`, `cases`, `aligned`), accents, `\mathbb`/`\mathcal`/`\mathfrak`, operators
-  with limits above and below. Unknown commands and environments show their source instead of
-  failing the page
+* Math: `$inline$` and `$$display$$` typeset by our own TeX engine, using the **KaTeX/MathJax
+  vocabulary** — ~210 symbol commands, fractions (`\frac`, `\dfrac`, `\cfrac`, `\over`, `\genfrac`),
+  roots with indices, scripts, `\left…\middle…\right` fences that grow, `\big`…`\Bigg`,
+  `\overset`/`\underset`/`\stackrel`, `\overbrace`/`\underbrace`, `\boxed`, `\cancel`,
+  `\substack`, `\boldsymbol`, matrices (`matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `smallmatrix`),
+  cases, `array` with a per-column preamble, `aligned`/`align`/`gather`/`split`, accents, `\mathbb`/
+  `\mathcal`/`\mathfrak`, operators with limits above and below, the full spacing set. Unknown
+  commands and environments show their source instead of failing the page
 * Mermaid drawn natively — `flowchart`/`graph`, `sequenceDiagram`, `pie`, `classDiagram`,
   `stateDiagram-v2`, `gantt` and `journey`; unsupported types fall back to a readable source card
   with a diagnostic
@@ -239,7 +242,7 @@ real, not for show:
 ```powershell
 # .NET 11 SDK (C# 15) required — see docs/BUILD.md for the exact version and the
 # two environment quirks this workspace has.
-pwsh -File build/build.ps1 -Task test      # build + 188 checks
+pwsh -File build/build.ps1 -Task test      # build + 193 checks
 pwsh -File build/build.ps1 -Task publish   # artifacts/publish/mdview.exe (self-contained)
 ```
 
@@ -265,10 +268,11 @@ samples/              Feature tour and a Russian typography sample
 * **Mermaid covers seven diagram types.** `erDiagram`, `gitGraph`, `mindmap`, `timeline`,
   `quadrantChart`, `sankey`, `xychart`, `C4` and `block` show their source with a clear note; a
   diagram that cannot be parsed never breaks the page.
-* **Formulas are a TeX subset**, not LaTeX: layout is produced by our own engine (no MathJax, no
-  KaTeX, no web fonts). Unknown commands, `\begin{}` environments we do not know and broken input
-  are printed as their source — a formula can never break the document.
-  Unknown commands render as literal text rather than an error.
+* **Formulas speak the KaTeX/MathJax vocabulary** — the same commands a document written for either
+  engine uses — but layout is produced by our own engine: no MathJax, no KaTeX, no web fonts, no
+  network. Numbering (`\label`, `\tag`) and colours are parsed and produce no ink. Unknown commands,
+  unknown `\begin{}` environments and broken input are printed as their source: a formula can never
+  break the document.
 
 ---
 

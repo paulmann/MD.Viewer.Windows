@@ -6,6 +6,31 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Formulas now speak the KaTeX/MathJax vocabulary** — the same commands a document written for
+  either engine uses — while layout stays our own (no MathJax, no KaTeX, no web fonts, no network).
+  * The symbol table grew from 110 to ~210 commands: Greek with variants, the full binary/relation/
+    arrow sets (including long and double arrows, harpoons, loops), large operators (`\oiint`,
+    `\iiiint`, `\bigsqcup` …), `\hbar`/`\ell`/`\Re`/`\Im`/`\aleph`/`\beth`, corners, `\checkmark`,
+    `\TeX`/`\LaTeX`.
+  * New constructs: the infix `a \over b`, `\atop`, `\choose`, `\brace`, `\brack`, `\above`,
+    `\genfrac`, `\substack`/`\subarray`, `\overset`/`\underset`/`\stackrel`,
+    `\overbrace`/`\underbrace` (and the paren/group/bracket variants), `\boxed`/`\fbox`,
+    `\cancel`/`\bcancel`/`\xcancel`, `\rule`, `\raisebox`, `\llap`/`\rlap`/`\clap`, `\smash`,
+    `\phantom`/`\hphantom`/`\vphantom`, `\boldsymbol`/`\bm`/`\pmb`/`\mathbfit`,
+    `\mathop`/`\mathbin`/`\mathrel`/`\mathord`/`\mathopen`/`\mathclose`/`\mathpunct`,
+    `\href`/`\url`, `\mod`, `\textsf`/`\textmd`, the full spacing set (`\negthinspace` …
+    `\negthickspace`, `\kern`, `\mkern`, `\mskip`, `\hspace*`), and `\hline`/`\cline`/`\hdashline`
+    inside arrays.
+  * Environments: `smallmatrix`, `dcases`, `rcases`, `alignedat`, `gathered`, `split`, `multline`,
+    `eqnarray`, `displaylines`, `darray`, `subarray` and the `matrix*` forms; `array` now honours a
+    per-column preamble (`{lcr}`, `|`, `p{…}` as left-aligned).
+  * Bold math is a real face change: `\boldsymbol{\alpha}` draws bold glyphs, not upright text.
+- **A new test suite, `math coverage`**: 110 formulas covering ~900 commands, each of which must parse
+  without a fallback node and lay out to a box with real metrics. A vocabulary regression now fails
+  the build instead of appearing as raw TeX in a document. 188 → 193 checks.
+
 ### Fixed
 
 - **The English README showed a screenshot with Russian text.** `docs/img/mermaid.png` was captured

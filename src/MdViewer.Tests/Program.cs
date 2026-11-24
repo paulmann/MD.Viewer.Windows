@@ -33,6 +33,7 @@ internal static class Program
         ParserTests.Run();
         RenderTests.Run();
         MathTests.Run();
+        MathCoverageTests.Run();
         ThemeTests.Run();
         BehaviourTests.Run();
         DiagramTests.Run();

@@ -377,6 +377,7 @@ public sealed class MathLimitsBox : MathBox
 
 public sealed class MathMatrixBox : MathBox{
     private readonly List<(MathBox Box, float X, float Baseline)> _cells = [];
+    private readonly List<(float Y, float Width, bool Dashed)> _rules = [];
 
     public void Add(MathBox box, float x, float baseline)
     {
@@ -386,11 +387,35 @@ public sealed class MathMatrixBox : MathBox{
         Depth = MathF.Max(Depth, baseline + box.Depth);
     }
 
+    /// <summary>A horizontal rule of an array (\hline), measured from the first baseline.</summary>
+    public void AddRule(float y, float width, bool dashed)
+    {
+        _rules.Add((y, width, dashed));
+        Ascent = MathF.Max(Ascent, -y);
+        Depth = MathF.Max(Depth, y);
+    }
+
     public override void Paint(PaintContext ctx, float x, float baseline)
     {
         foreach ((MathBox box, float dx, float dy) in _cells)
         {
             box.Paint(ctx, x + dx, baseline + dy);
+        }
+
+        foreach ((float y, float width, bool dashed) in _rules)
+        {
+            float lineY = baseline + y;
+            if (dashed)
+            {
+                for (float px = x; px < x + width; px += 6f)
+                {
+                    ctx.Fill(new RectangleF(px, lineY, MathF.Min(3f, x + width - px), 1f), ctx.Colors.Border);
+                }
+
+                continue;
+            }
+
+            ctx.Fill(new RectangleF(x, lineY, width, 1f), ctx.Colors.Border);
         }
     }
 }
@@ -433,4 +458,130 @@ public sealed class MathFallbackBox : MathBox
     }
 
     public override void Paint(PaintContext ctx, float x, float baseline) => Glyph(ctx, _text, _font, _fontAscent, _color, x, baseline);
+}
+
+/// <summary>A frame around its child: \boxed (tight) and \fbox (padded).</summary>
+public sealed class MathFramedBox : MathBox
+{
+    private readonly MathBox _body;
+    private readonly float _padding;
+    private readonly float _rule;
+    private readonly float _radius;
+
+    public MathFramedBox(MathBox body, float padding, float rule, float radius, float horizontalPadding)
+    {
+        _body = body;
+        _padding = padding;
+        _rule = rule;
+        _radius = radius;
+        Width = body.Width + 2f * horizontalPadding;
+        Ascent = body.Ascent + padding + rule;
+        Depth = body.Depth + padding + rule;
+        HorizontalPadding = horizontalPadding;
+    }
+
+    public float HorizontalPadding { get; }
+
+    public override void Paint(PaintContext ctx, float x, float baseline)
+    {
+        float top = baseline - Ascent;
+        var rect = new RectangleF(x + _rule / 2f, top + _rule / 2f, Width - _rule, Height - _rule);
+        // The page border colour is nearly invisible on the sheet: a formula frame is ink.
+        ctx.StrokeRound(rect, _radius, ctx.Colors.TextMuted, MathF.Max(1f, _rule));
+        _body.Paint(ctx, x + HorizontalPadding, baseline);
+    }
+}
+
+/// <summary>\cancel and friends: the child, struck through.</summary>
+public sealed class MathCancelBox : MathBox
+{
+    private readonly MathBox _body;
+    private readonly MathCancelKind _kind;
+    private readonly float _thickness;
+
+    public MathCancelBox(MathBox body, MathCancelKind kind, float thickness)
+    {
+        _body = body;
+        _kind = kind;
+        _thickness = thickness;
+        Width = body.Width;
+        Ascent = body.Ascent;
+        Depth = body.Depth;
+    }
+
+    public override void Paint(PaintContext ctx, float x, float baseline)
+    {
+        _body.Paint(ctx, x, baseline);
+        Pen pen = ctx.Pen(ctx.Colors.TextMuted, _thickness);
+        float top = baseline - Ascent;
+        float bottom = baseline + Depth;
+        if (_kind is MathCancelKind.Forward or MathCancelKind.Both)
+        {
+            ctx.G.DrawLine(pen, x, bottom, x + Width, top);
+        }
+
+        if (_kind is MathCancelKind.Backward or MathCancelKind.Both)
+        {
+            ctx.G.DrawLine(pen, x, top, x + Width, bottom);
+        }
+    }
+}
+
+/// <summary>\rule{width}{height}: a filled rectangle standing on the baseline.</summary>
+public sealed class MathRuleBox : MathBox
+{
+    public MathRuleBox(float width, float height)
+    {
+        Width = MathF.Max(0f, width);
+        Ascent = MathF.Max(0f, height);
+        Depth = 0f;
+    }
+
+    public override void Paint(PaintContext ctx, float x, float baseline)
+    {
+        ctx.Fill(new RectangleF(x, baseline - Ascent, Width, Ascent), ctx.Colors.Text);
+    }
+}
+
+/// <summary>A child moved off its natural place (\raisebox, \llap, \smash).</summary>
+public sealed class MathShiftBox : MathBox
+{
+    private readonly MathBox _child;
+    private readonly float _dx;
+    private readonly float _dy;
+    private readonly bool _paints;
+
+    public MathShiftBox(MathBox child, float dx, float dy, float width, bool paints)
+    {
+        _child = child;
+        _dx = dx;
+        _dy = dy;
+        _paints = paints;
+        Width = float.IsNaN(width) ? child.Width : width;
+        Ascent = MathF.Max(0f, child.Ascent - dy);
+        Depth = MathF.Max(0f, child.Depth + dy);
+    }
+
+    public override void Paint(PaintContext ctx, float x, float baseline)
+    {
+        if (_paints)
+        {
+            _child.Paint(ctx, x + _dx, baseline - _dy);
+        }
+    }
+}
+
+/// <summary>\phantom: the metrics of the child, none of its ink.</summary>
+public sealed class MathPhantomBox : MathBox
+{
+    public MathPhantomBox(MathBox child, bool keepWidth, bool keepHeight)
+    {
+        Width = keepWidth ? child.Width : 0f;
+        Ascent = keepHeight ? child.Ascent : 0f;
+        Depth = keepHeight ? child.Depth : 0f;
+    }
+
+    public override void Paint(PaintContext ctx, float x, float baseline)
+    {
+    }
 }

@@ -17,6 +17,8 @@ public sealed class MathParser
         ["⊂"] = "⊄", ["⊃"] = "⊅", ["⊆"] = "⊈", ["⊇"] = "⊉", ["≡"] = "≢",
         ["≈"] = "≉", ["≤"] = "≰", ["≥"] = "≱", ["∼"] = "≁", ["∣"] = "∤",
         ["∥"] = "∦", ["→"] = "↛", ["⇒"] = "⇏", ["←"] = "↚", ["∃"] = "∄",
+        ["≅"] = "≇", ["≃"] = "≄", ["⊢"] = "⊬", ["⊨"] = "⊭", ["⇔"] = "⇎",
+        ["≺"] = "⊀", ["≻"] = "⊁", ["∝"] = "∦", ["≪"] = "≪", ["∼"] = "≁",
     };
 
     private readonly string _tex;
@@ -129,6 +131,54 @@ public sealed class MathParser
             case MathSpace space:
                 sb.Append(' ', (int)MathF.Round(space.Em * 3f));
                 break;
+            case MathStack stack:
+                if (stack.Above is not null && stack.Mark == MathStackMark.None)
+                {
+                    AppendPlain(stack.Above, sb);
+                }
+
+                AppendPlain(stack.Body, sb);
+                if (stack.Below is not null && stack.Mark == MathStackMark.None)
+                {
+                    AppendPlain(stack.Below, sb);
+                }
+
+                break;
+            case MathStacked stacked:
+                for (int i = 0; i < stacked.Lines.Count; i++)
+                {
+                    if (i > 0)
+                    {
+                        sb.Append(' ');
+                    }
+
+                    AppendPlain(stacked.Lines[i], sb);
+                }
+
+                break;
+            case MathFramed framed:
+                AppendPlain(framed.Body, sb);
+                break;
+            case MathCancel cancel:
+                AppendPlain(cancel.Body, sb);
+                break;
+            case MathRule:
+                sb.Append("___");
+                break;
+            case MathShift shift:
+                AppendPlain(shift.Body, sb);
+                break;
+            case MathClass klass:
+                AppendPlain(klass.Body, sb);
+                break;
+            case MathBold bold:
+                AppendPlain(bold.Body, sb);
+                break;
+            case MathPhantom:
+                sb.Append(' ');
+                break;
+            case MathHLine:
+                return;
             case MathStyle style:
                 AppendPlain(style.Body, sb);
                 break;
@@ -158,6 +208,12 @@ public sealed class MathParser
                 _i += 2;
                 rows.Add(new MathRow(nodes));
                 nodes = [];
+                continue;
+            }
+
+            if (TryParseInfix(nodes, null, false) is { } infix)
+            {
+                nodes = [infix];
                 continue;
             }
 
@@ -209,6 +265,13 @@ public sealed class MathParser
                 _i += 2;
                 nodes.Add(new MathSpace(0.6f));
                 continue;
+            }
+
+            if (TryParseInfix(nodes, stop, stopAtRight) is { } infix)
+            {
+                // \over and friends swallow the rest of the group.
+                nodes = [infix];
+                break;
             }
 
             MathNode? node = ParseAtom();
@@ -487,6 +550,12 @@ public sealed class MathParser
             case "texttt":
                 return new MathText(ReadRawGroup(), MathTextStyle.Monospace);
 
+            case "textsf":
+                return new MathText(ReadRawGroup(), MathTextStyle.SansSerif);
+
+            case "textmd":
+                return new MathText(ReadRawGroup(), MathTextStyle.Upright);
+
             case "mathrm" or "mathup":
                 return new MathText(ReadRawGroup(), MathTextStyle.Upright);
 
@@ -522,7 +591,9 @@ public sealed class MathParser
             }
 
             case "overline" or "bar" or "hat" or "widehat" or "vec" or "overrightarrow" or
-                 "dot" or "ddot" or "tilde" or "widetilde" or "check" or "breve" or "acute" or "grave":
+                 "overleftarrow" or "overleftrightarrow" or "overparen" or "overgroup" or
+                 "dot" or "ddot" or "dddot" or "ddddot" or "tilde" or "widetilde" or "widecheck" or
+                 "check" or "breve" or "acute" or "grave" or "mathring":
             {
                 MathNode body = ParseArgument();
                 string mark = MathSymbols.TryGetAccent(command, out string glyph, out _) ? glyph : "\u00AF";
@@ -581,8 +652,30 @@ public sealed class MathParser
             case "thinspace":
                 return new MathSpace(0.16f);
 
-            case "hspace" or "mspace" or "kern":
+            case "medspace":
+                return new MathSpace(0.22f);
+
+            case "thickspace":
+                return new MathSpace(0.28f);
+
+            case "negthinspace":
+                return new MathSpace(-0.16f);
+
+            case "negmedspace":
+                return new MathSpace(-0.22f);
+
+            case "negthickspace":
+                return new MathSpace(-0.28f);
+
+            case "hspace" or "hskip" or "mspace" or "mskip" or "kern" or "mkern":
             {
+                // \hspace* disables the stretch (there is none here) — the star is meaningless.
+                SkipSpaces();
+                if (!AtEnd && Peek() == '*')
+                {
+                    _i++;
+                }
+
                 string size = ReadRawGroup();
                 return new MathSpace(ParseEm(size));
             }
@@ -638,8 +731,165 @@ public sealed class MathParser
 
             case "phantom" or "hphantom" or "vphantom":
             {
+                MathNode body = ParseArgument();
+                bool keepWidth = command != "vphantom";
+                bool keepHeight = command != "hphantom";
+                return new MathPhantom(body, keepWidth, keepHeight);
+            }
+
+            case "genfrac":
+            {
+                string open = DelimiterFromRaw(ReadRawGroup());
+                string close = DelimiterFromRaw(ReadRawGroup());
+                float thickness = ParseEm(ReadRawGroup());
+                _ = ReadRawGroup(); // style: 0..3, display/text/script/scriptscript
+                MathNode numerator = ParseArgument();
+                MathNode denominator = ParseArgument();
+                var fraction = new MathFraction(numerator, denominator, barred: thickness != 0f);
+                return new MathLeftRight(open, close, fraction);
+            }
+
+            case "substack":
+                return ParseStacked(0.72f);
+
+            case "subarray":
+            {
+                SkipSpaces();
+                if (!AtEnd && Peek() == '{')
+                {
+                    _ = ReadRawGroup();
+                }
+
+                return ParseStacked(0.72f);
+            }
+
+            case "overset" or "stackrel":
+            {
+                MathNode above = ParseArgument();
+                MathNode body = ParseArgument();
+                return new MathStack(body, above, null);
+            }
+
+            case "underset":
+            {
+                MathNode below = ParseArgument();
+                MathNode body = ParseArgument();
+                return new MathStack(body, null, below);
+            }
+
+            case "overbrace" or "underbrace" or "overparen" or "underparen" or
+                 "overgroup" or "undergroup" or "overbracket" or "underbracket":
+            {
+                MathNode body = ParseArgument();
+                bool under = command.StartsWith("under", StringComparison.Ordinal);
+                _ = MathSymbols.TryGetAccent(command, out string mark, out _);
+                return new MathStack(body, under ? null : new MathAtom(mark, MathAtomKind.Ordinary),
+                    under ? new MathAtom(mark, MathAtomKind.Ordinary) : null,
+                    under ? MathStackMark.UnderBrace : MathStackMark.OverBrace);
+            }
+
+            case "boxed":
+                return new MathFramed(ParseArgument(), MathFrameKind.Box);
+
+            case "fbox" or "framebox":
+                return new MathFramed(ParseArgument(), MathFrameKind.Padded);
+
+            case "cancel":
+                return new MathCancel(ParseArgument(), MathCancelKind.Forward);
+
+            case "bcancel":
+                return new MathCancel(ParseArgument(), MathCancelKind.Backward);
+
+            case "xcancel":
+                return new MathCancel(ParseArgument(), MathCancelKind.Both);
+
+            case "sout":
+                return new MathAccent(ParseArgument(), "\u0338", under: false);
+
+            case "boldsymbol" or "bm" or "pmb" or "mathbfit" or "bmstyle":
+                return new MathBold(ParseArgument(), italic: command is "boldsymbol" or "bm" or "mathbfit");
+
+            case "mathnormal":
+                return ParseArgument();
+
+            case "mathop" or "mathbin" or "mathrel" or "mathord" or "mathopen" or
+                 "mathclose" or "mathpunct" or "mathinner":
+            {
+                MathNode body = ParseArgument();
+                MathAtomKind classKind = command switch
+                {
+                    "mathop" => MathAtomKind.LargeOperator,
+                    "mathbin" => MathAtomKind.Binary,
+                    "mathrel" => MathAtomKind.Relation,
+                    "mathopen" => MathAtomKind.Open,
+                    "mathclose" => MathAtomKind.Close,
+                    "mathpunct" => MathAtomKind.Punctuation,
+                    _ => MathAtomKind.Ordinary,
+                };
+                return new MathClass(body, classKind);
+            }
+
+            case "hline" or "hdashline":
+                return new MathHLine(dashed: command == "hdashline");
+
+            case "cline":
+            {
                 _ = ReadRawGroup();
-                return new MathSpace(0.4f);
+                return new MathHLine(dashed: false);
+            }
+
+            case "raisebox":
+            {
+                float dy = ParseEm(ReadRawGroup());
+                _ = ReadRawGroupIfAny(); // height
+                _ = ReadRawGroupIfAny(); // depth
+                return new MathShift(ParseArgument(), 0f, dy);
+            }
+
+            case "rule":
+            {
+                SkipSpaces();
+                float width = 0.5f;
+                float height = 0.4f;
+                if (!AtEnd)
+                {
+                    width = ParseEm(ReadDimension());
+                    height = ParseEm(ReadDimension());
+                }
+
+                return new MathRule(width, height);
+            }
+
+            case "llap" or "rlap" or "clap" or "mathllap" or "mathrlap" or "mathclap":
+                return new MathShift(ParseArgument(), 0f, 0f, widthEm: 0f);
+
+            case "smash":
+                return new MathShift(ParseArgument(), 0f, 0f);
+
+            case "href":
+            {
+                _ = ReadRawGroup();
+                return ParseArgument();
+            }
+
+            case "url":
+                return new MathText(ReadRawGroup(), MathTextStyle.Monospace);
+
+            case "htmlClass" or "htmlId" or "htmlStyle" or "htmlData":
+            {
+                _ = ReadRawGroup();
+                return ParseArgument();
+            }
+
+            case "mod":
+            {
+                var parts = new List<MathNode>
+                {
+                    new MathSpace(0.3f),
+                    new MathText("mod", MathTextStyle.Upright),
+                    new MathSpace(0.3f),
+                };
+                return new MathRow(parts);
             }
 
             case "strut" or "mathstrut" or "displaystyle*":
@@ -675,6 +925,154 @@ public sealed class MathParser
 
     private static bool IsLowerGreek(char c) => c is >= '\u03B1' and <= '\u03C9';
 
+    /// <summary>
+    /// Infix fractions: <c>a \over b</c>, <c>a \atop b</c>, <c>n \choose k</c>,
+    /// <c>\brace</c>, <c>\brack</c>, <c>\above</c>. They consume the rest of the group, so
+    /// the caller stops after adding the single built node.
+    /// </summary>
+    private MathNode? TryParseInfix(List<MathNode> soFar, char? stop, bool stopAtRight)
+    {
+        if (Peek() != '\\')
+        {
+            return null;
+        }
+
+        string word = PeekWord();
+        if (word is not ("over" or "atop" or "choose" or "brace" or "brack" or "above"))
+        {
+            return null;
+        }
+
+        _ = ReadCommandName();
+        if (word == "above")
+        {
+            _ = ReadRawGroup();
+        }
+
+        MathRow tail = ParseList(stop, stopAtRight);
+        // A snapshot: the caller reuses its list for the result row, and sharing it
+        // here would make the formula contain itself.
+        var numerator = new MathRow([.. soFar]);
+        var fraction = new MathFraction(numerator, tail, barred: word is "over" or "above");
+        return word switch
+        {
+            "choose" => new MathLeftRight("(", ")", fraction),
+            "brace" => new MathLeftRight("{", "}", fraction),
+            "brack" => new MathLeftRight("[", "]", fraction),
+            _ => fraction,
+        };
+    }
+
+    /// <summary>\substack{a \\\\ b} — centred lines at a reduced size.</summary>
+    private MathStacked ParseStacked(float scale)
+    {
+        SkipSpaces();
+        if (AtEnd || Peek() != '{')
+        {
+            return new MathStacked([], scale);
+        }
+
+        _i++;
+        var lines = new List<MathNode>();
+        var current = new List<MathNode>();
+        while (!AtEnd)
+        {
+            SkipSpaces();
+            if (AtEnd)
+            {
+                break;
+            }
+
+            if (Peek() == '}')
+            {
+                _i++;
+                break;
+            }
+
+            if (Peek() == '\\' && PeekAt(1) == '\\')
+            {
+                _i += 2;
+                lines.Add(new MathRow(current));
+                current = [];
+                continue;
+            }
+
+            MathNode? node = ParseAtom();
+            if (node is null)
+            {
+                continue;
+            }
+
+            current.Add(ParseScripts(node));
+        }
+
+        lines.Add(new MathRow(current));
+        return new MathStacked(lines, scale);
+    }
+
+    private static string DelimiterFromRaw(string raw)
+    {
+        raw = raw.Trim();
+        if (raw.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (raw[0] == '\\')
+        {
+            string name = raw[1..];
+            if (name is "." or "")
+            {
+                return string.Empty;
+            }
+
+            if (MathSymbols.TryGet(name, out string text, out _))
+            {
+                return text;
+            }
+
+            return name;
+        }
+
+        return raw == "." ? string.Empty : raw;
+    }
+
+    /// <summary>One dimension token: a braced group ("1em") or a single character.</summary>
+    private string ReadDimension()
+    {
+        SkipSpaces();
+        if (AtEnd)
+        {
+            return "0.4em";
+        }
+
+        return Peek() == '{' ? ReadRawGroup() : _tex[_i++].ToString();
+    }
+
+    private static List<char>? ParsePreamble(string preamble)
+    {
+        var alignments = new List<char>();
+        foreach (char c in preamble)
+        {
+            switch (c)
+            {
+                case 'l' or 'c' or 'r':
+                    alignments.Add(c);
+                    break;
+
+                case '|' or ' ':
+                    break;
+
+                default:
+                    // p{…}, m{…}, b{…} and friends are left aligned here
+                    alignments.Add('l');
+                    break;
+            }
+        }
+
+        return alignments.Count == 0 ? null : alignments;
+    }
+
     private MathNode ParseEnvironment()
     {
         string name = ReadRawGroup().Trim();
@@ -686,10 +1084,11 @@ public sealed class MathParser
         }
 
         SkipSpaces();
+        List<char>? alignments = null;
         if (!AtEnd && Peek() == '{')
         {
-            // array preamble: {cc} — alignment is uniform here, the spec is consumed
-            _ = ReadRawGroup();
+            // array preamble: {lcr} — per-column alignment; matrices ignore it
+            alignments = ParsePreamble(ReadRawGroup());
         }
 
         SkipSpaces();
@@ -703,6 +1102,7 @@ public sealed class MathParser
         var rows = new List<IReadOnlyList<MathNode>>();
         var cells = new List<MathNode>();
         var row = new List<MathNode>();
+        var ruleRows = new List<int>();
 
         while (!AtEnd)
         {
@@ -743,6 +1143,21 @@ public sealed class MathParser
                 continue;
             }
 
+            if (node is MathHLine)
+            {
+                // A rule belongs to the row that follows it: close the current one first.
+                if (row.Count > 0 || cells.Count > 0)
+                {
+                    cells.Add(new MathRow(row));
+                    row = [];
+                    rows.Add(cells);
+                    cells = [];
+                }
+
+                ruleRows.Add(rows.Count);
+                continue;
+            }
+
             row.Add(ParseScripts(node));
         }
 
@@ -757,7 +1172,11 @@ public sealed class MathParser
             rows.Add([MathRow.Empty]);
         }
 
-        return new MathMatrix(rows, open, close, leftAligned || name is "cases" or "aligned" or "align" or "align*");
+        return new MathMatrix(rows, open, close, leftAligned || name is "cases" or "aligned" or "align" or "align*")
+        {
+            Alignments = alignments,
+            RuleRows = ruleRows.Count == 0 ? null : ruleRows,
+        };
     }
 
     private void SkipEnvironmentBody(string name)

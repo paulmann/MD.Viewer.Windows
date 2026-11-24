@@ -59,9 +59,9 @@ Test runner details: `mdview-tests.exe --snapshot <md> <png>`, `--report <md>`, 
 | `src/MdViewer.Core/Highlighting` | Line tokenizer and ~20 language families |
 | `src/MdViewer.Core/Diagrams` | Mermaid parsers: flowchart/state, sequence, pie, class, gantt, journey — and the `MermaidDiagrams` dispatcher |
 | `src/MdViewer.Core/Export` | Standalone HTML and plain-text exporters |
-| `src/MdViewer.Render/Theming` | Palettes, type scale, metrics |
+| `src/MdViewer.Core/Formulas` | `MathNodes`, `MathParser`, `MathSymbols` — the TeX reader and the KaTeX/MathJax vocabulary |
 | `src/MdViewer.Render/Text` | Font book, run model, inline shaper |
-| `src/MdViewer.Render/Formulas` | Math boxes and the TeX typographer |
+| `src/MdViewer.Render/Formulas` | `MathBoxes`, `MathLayout` — math boxes and the typesetter |
 | `src/MdViewer.Render/Layout` | Block visuals, tables, containers, diagrams, the layout engine |
 | `src/MdViewer.Render/Rendering` | `PaintContext` (cached brushes/pens, run painting) |
 | `src/MdViewer.App/Controls` | Document view, editor, chrome (toolbar, tabs, outline, find, status) |
@@ -73,10 +73,12 @@ Test runner details: `mdview-tests.exe --snapshot <md> <png>`, `--report <md>`, 
 
 ## Where to add things
 
-* **A new formula command**: a case in `MathParser.ParseCommand`, a table entry in `MathSymbols`,
-  then a `MathBox` in `src/MdViewer.Render/Formulas` when the construct needs special layout, a
-  branch in `MathLayout.Build`, and a case in `MathTests`. Unknown commands must keep printing
-  themselves as text — a formula can never throw.
+* **A new formula command**: a case in `MathParser.ParseCommand`, a table entry in `MathSymbols`, then
+  a `MathBox` in `src/MdViewer.Render/Formulas` when the construct needs new layout, a branch in
+  `MathLayout.Build`, and an entry in the `math coverage` corpus (`MathCoverageTests`). The vocabulary
+  is the KaTeX one — check a new command against KaTeX's supported list before adding it here, and
+  keep `docs/MARKDOWN.md` in step. Unknown commands must keep printing themselves as text: a formula
+  can never throw.
 
 * **A new Markdown construct**: parser first (`InlineParser`/`BlockParser`), then a `BlockLayout`
   visual, then a line in `docs/MARKDOWN.md` and a parser test.

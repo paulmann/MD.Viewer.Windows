@@ -14,7 +14,7 @@ public sealed class MathLayout(FontBook fonts, Color color)
     private const float Axis = 0.25f;
     private const float RuleThickness = 0.05f;
 
-    private readonly record struct Ctx(float Size, bool Display, int Level)
+    private readonly record struct Ctx(float Size, bool Display, int Level, bool Bold = false)
     {
         public Ctx Script() => this with { Size = Size * 0.72f, Display = false, Level = Level + 1 };
 
@@ -82,6 +82,37 @@ public sealed class MathLayout(FontBook fonts, Color color)
 
             case MathStyle style:
                 return Build(style.Body, ctx with { Display = style.Display });
+
+            case MathStack stack:
+                return BuildStack(stack, ctx);
+
+            case MathStacked stacked:
+                return BuildStacked(stacked, ctx);
+
+            case MathFramed framed:
+                return BuildFramed(framed, ctx);
+
+            case MathCancel cancel:
+                return new MathCancelBox(Build(cancel.Body, ctx), cancel.Kind, MathF.Max(1f, ctx.Size * 0.055f));
+
+            case MathRule rule:
+                return new MathRuleBox(rule.WidthEm * ctx.Size, rule.HeightEm * ctx.Size);
+
+            case MathShift shift:
+                return new MathShiftBox(Build(shift.Body, ctx), shift.DxEm * ctx.Size, shift.DyEm * ctx.Size,
+                    float.IsNaN(shift.WidthEm) ? float.NaN : shift.WidthEm * ctx.Size, paints: true);
+
+            case MathClass klass:
+                return Build(klass.Body, ctx);
+
+            case MathBold bold:
+                return Build(bold.Body, ctx with { Bold = true });
+
+            case MathPhantom phantom:
+                return new MathPhantomBox(Build(phantom.Body, ctx), phantom.KeepWidth, phantom.KeepHeight);
+
+            case MathHLine:
+                return new MathSpaceBox(0f, 0f, 0f);
 
             case MathUnsupported unsupported:
                 return BuildFallback("\\" + unsupported.Tex.TrimStart('\\'), ctx);
@@ -205,6 +236,8 @@ public sealed class MathLayout(FontBook fonts, Color color)
         MathAtom atom => atom.Kind,
         FormulaText text => text.Kind,
         MathScripts scripts => scripts.Base is null ? MathAtomKind.Ordinary : KindOf(scripts.Base),
+        MathClass klass => klass.Kind,
+        MathStack stack => stack.Mark == MathStackMark.None ? MathAtomKind.Ordinary : MathAtomKind.LargeOperator,
         _ => MathAtomKind.Ordinary,
     };
 
@@ -223,8 +256,15 @@ public sealed class MathLayout(FontBook fonts, Color color)
             size *= ctx.Display ? 1.45f : 1.08f;
         }
 
-        string family = atom.Italic ? fonts.MathItalicFamily : fonts.MathFamily;
-        FontStyle style = atom.Italic ? FontStyle.Italic : FontStyle.Regular;
+        string family = atom.Italic && !ctx.Bold ? fonts.MathItalicFamily : fonts.MathFamily;
+        FontStyle style = (atom.Italic, ctx.Bold) switch
+        {
+            (true, false) => FontStyle.Italic,
+            (false, true) => FontStyle.Bold,
+            (true, true) => FontStyle.Bold | FontStyle.Italic,
+            _ => FontStyle.Regular,
+        };
+
         Font font = fonts.PixelFont(family, size, style);
         float width = fonts.Measure(atom.Text, font);
         float ascent = size * (atom.Kind == MathAtomKind.LargeOperator ? 0.78f : 0.75f);
@@ -264,8 +304,55 @@ public sealed class MathLayout(FontBook fonts, Color color)
 
     // -------------------------------------------------------------- fractions
 
-    private MathBox BuildFraction(MathFraction fraction, Ctx ctx)
+    /// <summary>\overset, \underset, \stackrel and the braces: anything above or below the base.</summary>
+    private MathBox BuildStack(MathStack stack, Ctx ctx)
     {
+        MathBox body = Build(stack.Body, ctx);
+        MathBox? above = stack.Above is null ? null : Build(stack.Above, ctx);
+        MathBox? below = stack.Below is null ? null : Build(stack.Below, ctx);
+        return new MathLimitsBox(body, above, below, ctx.Size * 0.14f);
+    }
+
+    /// <summary>\substack: centred lines at a reduced size.</summary>
+    private MathBox BuildStacked(MathStacked stacked, Ctx ctx)
+    {
+        if (stacked.Lines.Count == 0)
+        {
+            return new MathSpaceBox(0f, ctx.Size * 0.4f, ctx.Size * 0.1f);
+        }
+
+        Ctx inner = ctx with { Size = ctx.Size * stacked.Scale, Display = false };
+        var boxes = new MathBox[stacked.Lines.Count];
+        float width = 0f;
+        for (int i = 0; i < boxes.Length; i++)
+        {
+            boxes[i] = Build(stacked.Lines[i], inner);
+            width = MathF.Max(width, boxes[i].Width);
+        }
+
+        var column = new MathStackBox();
+        float y = 0f;
+        for (int i = 0; i < boxes.Length; i++)
+        {
+            if (i > 0)
+            {
+                y += boxes[i].Ascent + inner.Size * 0.12f;
+            }
+
+            column.Add(boxes[i], y, (width - boxes[i].Width) / 2f);
+            y += boxes[i].Depth;
+        }
+
+        return column;    }
+
+    private MathBox BuildFramed(MathFramed framed, Ctx ctx)
+    {
+        MathBox body = Build(framed.Body, ctx);
+        float rule = MathF.Max(1f, ctx.Size * 0.045f);
+        float padding = framed.Kind == MathFrameKind.Padded ? ctx.Size * 0.3f : ctx.Size * 0.14f;
+        return new MathFramedBox(body, padding, rule, ctx.Size * 0.1f, padding + ctx.Size * 0.08f);
+    }
+    private MathBox BuildFraction(MathFraction fraction, Ctx ctx)    {
         Ctx inner = ctx.Display ? ctx : ctx.TextStyle();
         MathBox numerator = Build(fraction.Numerator, inner);
         MathBox denominator = Build(fraction.Denominator, inner);
@@ -470,15 +557,35 @@ public sealed class MathLayout(FontBook fonts, Color color)
             for (int c = 0; c < columns; c++)
             {
                 MathBox cell = cells[r, c];
-                float cellX = matrix.LeftAligned ? x : x + (columnWidths[c] - cell.Width) / 2f;
+                float cellX = x;
+                char align = matrix.Alignments is { } spec && c < spec.Count ? spec[c] : matrix.LeftAligned ? 'l' : 'c';
+                cellX += align switch
+                {
+                    'l' => 0f,
+                    'r' => columnWidths[c] - cell.Width,
+                    _ => (columnWidths[c] - cell.Width) / 2f,
+                };
+
                 grid.Add(cell, cellX, baselines[r]);
                 x += columnWidths[c] + colGap;
             }
         }
 
+        if (matrix.RuleRows is { Count: > 0 } ruleRows)
+        {
+            foreach (int index in ruleRows)
+            {
+                float y = index <= 0
+                    ? baselines[0] - rowAscent[0] - rowGap * 0.5f
+                    : index >= matrix.Rows.Count
+                        ? baselines[^1] + rowDepth[^1] + rowGap * 0.5f
+                        : baselines[index] - rowAscent[index] - rowGap * 0.5f;
+                grid.AddRule(y, totalWidth, dashed: false);
+            }
+        }
+
         float axis = ctx.Size * Axis;
-        float centre = (grid.Ascent - grid.Depth) / 2f;
-        float dy = centre - axis;
+        float centre = (grid.Ascent - grid.Depth) / 2f;        float dy = centre - axis;
         MathBox centred = new MathOffsetBox(grid, dy, grid.Width, grid.Ascent + dy, grid.Depth - dy);
 
         float target = grid.Height + ctx.Size * 0.1f;

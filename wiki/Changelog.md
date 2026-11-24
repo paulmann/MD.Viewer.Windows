@@ -4,6 +4,13 @@ The canonical history is
 [CHANGELOG.md](https://github.com/paulmann/MD.Viewer.Windows/blob/main/CHANGELOG.md) (Keep a
 Changelog format).
 
+## Unreleased
+
+* **Formulas speak the KaTeX/MathJax vocabulary** — ~210 symbol commands and the full construct set
+  (infix `\over`, `\genfrac`, `\substack`, `\overset`/`\underset`, braces, `\boxed`, `\cancel`,
+  bold math, `\hline` in arrays, more environments), typeset by our own engine.
+* New `math coverage` suite: 110 formulas / ~900 commands; 188 → 193 checks.
+
 ## 1.4.1 — 2026-11-24
 
 * **Fixed:** the File menu could open on another display; it is now anchored in screen coordinates

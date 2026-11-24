@@ -119,18 +119,35 @@ What is **not** implemented, so you can plan around it:
 * **Mermaid**: `erDiagram`, `gitGraph`, `mindmap`, `timeline`, `quadrantChart`, `sankey`,
   `xychart`, `C4` and `block` show source. Frames (`loop`/`alt`/`opt`) are labelled bands;
   `activate`/`deactivate` are ignored.
-* **Formulas are a TeX subset**, checked by our own parser and typesetter (no MathJax, no KaTeX).
-  Supported: `\frac`/`\dfrac`/`\tfrac`, `\binom`, `\sqrt[n]{}`, `^`/`_` (also together), `\left…\right`
-  with all fences, `\overline`/`\underline`/`\hat`/`\bar`/`\vec`/`\dot`/`\ddot`/`\tilde`/`\check`,
-  `\text`/`\mathrm`/`\mathbf`/`\mathit`/`\mathtt`/`\mathsf`/`\mathbb`/`\mathcal`/`\mathfrak`,
-  `\operatorname`, function names (`\sin`, `\log`, `\lim`, `\max`, …), large operators with limits in
-  display style, `matrix`/`pmatrix`/`bmatrix`/`Bmatrix`/`vmatrix`/`Vmatrix`/`cases`/`aligned`/`array`,
-  `\\` row breaks, `&` alignment, `\qquad`/`\quad`/`\,`/`\;`/`\:`/`\!`/`\hspace`, and the usual
-  Greek/symbol/arrow/relation tables.
-  Not supported: `\label`/`\tag`, colours are parsed and ignored, and unknown commands or
-  environments are printed as their source. A formula never throws — bad input degrades to text.
-  The screen, the printer and the PNG export share the same typeset layout; the HTML export keeps
-  the TeX source (`<span class="math-inline">`) so it can be fed to a web renderer later.
+* **Formulas use the KaTeX/MathJax vocabulary**, read by our own parser and typesetter — no
+  MathJax, no KaTeX, no web fonts. `docs/img`-level detail:
+  * **Atoms**: ~210 symbol commands (Greek with variants, binary operators, relations, arrows of all
+    four lengths and directions, large operators incl. `\oiint`/`\iiiint`, `\hbar`/`\ell`/`\Re`/`\Im`,
+    `\aleph`/`\beth`, `\forall`/`\exists`/`\nexists`, ellipses, `\checkmark`, corners, `\TeX`/`\LaTeX`).
+  * **Structures**: `\frac`/`\dfrac`/`\tfrac`/`\cfrac`, `\binom` family, the infix `a \over b`,
+    `\atop`, `\choose`, `\brace`, `\brack`, `\above`, `\genfrac{}{}{}{}{}{}`, `\sqrt[n]{}`,
+    scripts (also stacked), `\left…\middle…\right` with every fence, `\big`…`\Bigg` in all four sizes,
+    `\overset`/`\underset`/`\stackrel`, `\overbrace`/`\underbrace` (and paren/group/bracket variants),
+    `\boxed`/`\fbox`, `\cancel`/`\bcancel`/`\xcancel`, `\rule`, `\raisebox`, `\llap`/`\rlap`/`\clap`,
+    `\phantom`/`\hphantom`/`\vphantom`, `\substack`/`\subarray`, `\boldsymbol`/`\bm`/`\pmb`/`\mathbfit`,
+    `\mathop`/`\mathbin`/`\mathrel`/`\mathord`/`\mathopen`/`\mathclose`/`\mathpunct`,
+    `\text`/`\textrm`/`\textsf`/`\texttt`/`\textbf`/`\textit`/`\textup`/`\textnormal`,
+    `\mathrm`/`\mathbf`/`\mathit`/`\mathtt`/`\mathsf`/`\mathbb`/`\mathcal`/`\mathfrak`,
+    `\operatorname`/`\operatorname*`, `\pmod`/`\bmod`/`\mod`/`\pod`, `\not`, `\href`/`\url`,
+    the full spacing set (`\!` … `\negthickspace`, `\hspace{1em}`, `\kern`, `\mkern`, `\mskip`) and
+    `\displaystyle`/`\textstyle`/`\scriptstyle`/`\scriptscriptstyle`.
+  * **Environments**: `matrix`, `pmatrix`, `bmatrix`, `Bmatrix`, `vmatrix`, `Vmatrix`, `smallmatrix`
+    (and their `*` forms), `array` with a per-column preamble (`{lcr}`, `|`), `darray`, `subarray`,
+    `cases`, `dcases`, `rcases`, `aligned`, `alignedat`, `align`, `gather`, `gathered`, `split`,
+    `multline`, `equation`, `eqnarray`, `displaylines`, with `\\` rows, `&` columns and `\hline`
+    rules (`\cline` is parsed, the partial span is drawn across the row).
+  * **Tests**: every one of these is checked by `math coverage` — 110 formulas, ~900 commands — so a
+    regression in the vocabulary fails the build instead of showing up as raw TeX on screen.
+  * **Not supported**: `\label`/`\tag` produce no ink (numbering is not implemented), colours are
+    parsed and ignored, and an unknown command or environment prints its source. A formula never
+    throws — bad input degrades to text.
+  * The screen, the printer and the PNG export share the same typeset layout; the HTML export keeps
+    the TeX source (`<span class="math-inline">`) so it can be fed to a web renderer later.
 
 ## Where it lives
 
