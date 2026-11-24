@@ -1,4 +1,4 @@
-## Markdown support
+# Markdown support
 
 CommonMark core plus the GFM and MD.Scribe extensions. The contract, including what degrades, is
 [docs/MARKDOWN.md](https://github.com/paulmann/MD.Viewer.Windows/blob/main/docs/MARKDOWN.md).
@@ -12,12 +12,12 @@ CommonMark core plus the GFM and MD.Scribe extensions. The contract, including w
 | Lists | nested, ordered with start values, task lists with drawn checkboxes |
 | Quotes | quotes and GitHub alerts (`> [!NOTE]` … `> [!CAUTION]`) |
 | Footnotes | reference and inline, collected at the bottom |
-| Extras | `[TOC]`, YAML front matter, definition lists, emoji shortcodes (~255), typographic replacements |
+| Extras | `[TOC]`, YAML front matter, definition lists, emoji shortcodes (255), typographic replacements |
 | Formulas | `$inline$`, `$$display$$` — see [Formulas](Formulas) |
 | Diagrams | Mermaid: `flowchart`/`graph`, `sequenceDiagram`, `pie`, `classDiagram`, `stateDiagram-v2`, `gantt`, `journey` |
 | Images | resolved relative to the document, captions from alt text, placeholder when missing |
 
-### Deliberate limits
+## Deliberate limits
 
 * **Raw HTML is never executed.** It is shown as source in a labelled card — a security decision, not
   a missing feature.

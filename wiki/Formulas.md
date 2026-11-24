@@ -1,10 +1,10 @@
-## Formulas
+# Formulas
 
 `$inline$` and `$$display$$` are parsed into a TeX syntax tree and **typeset by the viewer itself** —
 no MathJax, no KaTeX, no web fonts, no additional dependency. The upright face is Cambria Math, which
 ships with Windows.
 
-### Supported
+## Supported
 
 | Construct | Example |
 | --- | --- |
@@ -31,7 +31,7 @@ $$
 $$
 ```
 
-### Not supported
+## Not supported
 
 * `\label` / `\tag` / `\ref` — there is no equation numbering.
 * Colours (`\color`, `\textcolor`) are parsed and ignored.
@@ -40,7 +40,7 @@ $$
 Unknown commands and broken input **never throw**: they are shown as text and the rest of the
 document renders normally.
 
-### Exports
+## Exports
 
 The screen, the printer and the PNG export share the same typeset layout. The HTML export keeps the
 TeX source in `<span class="math-inline">` so it can be handed to a web renderer later.

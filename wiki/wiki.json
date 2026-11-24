@@ -1,0 +1,14 @@
+{
+  "_comment": "Order and navigation for the wiki. Every page in wiki/ must be listed, and every listed page must exist; `ghagent wiki build` fails otherwise.",
+  "repo": "paulmann/MD.Viewer.Windows",
+  "branch": "main",
+  "title": "MD Viewer for Windows",
+  "footer": "PolyForm Noncommercial 1.0.0",
+  "groups": [
+    {"title": "", "pages": ["Home.md"]},
+    {"title": "Start", "pages": ["Getting-Started.md"]},
+    {"title": "Using MD Viewer", "pages": ["Tabs-and-Screens.md", "Formulas.md", "Markdown-Support.md", "Command-Line.md"]},
+    {"title": "Development", "pages": ["Building.md"]},
+    {"title": "Help", "pages": ["Troubleshooting.md", "Changelog.md"]}
+  ]
+}

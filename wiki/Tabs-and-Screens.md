@@ -1,6 +1,6 @@
-## Tabs and screens
+# Tabs and screens
 
-### Tabs
+## Tabs
 
 Every document lives in a tab. **Ctrl+Tab** switches, **Ctrl+W** closes, a **middle click** closes
 the pill under the pointer. Many tabs shrink instead of running off the window.
@@ -9,7 +9,7 @@ New files open in tabs by default. **View → Settings…** (`Ctrl+,`) switches 
 window*; that preference only affects files opened from the interface — start-up, session restore and
 the command line always stay in the window that is already running.
 
-### Dragging a tab
+## Dragging a tab
 
 | You drag a tab… | What happens |
 | --- | --- |
@@ -25,13 +25,13 @@ clipboard format (with a prefixed text fallback). The receiving window answers `
 `Link` (“keep it where it is”); nothing accepting the drop means the document gets its own window at
 the drop point via `--position`.
 
-### Width of the reading column
+## Width of the reading column
 
 The button next to the magnifier cycles **100 % → 75 % → 50 %** of the free pane. 100 % is measured
 *after* the outline sidebar, so a 2560-pixel screen is used instead of a narrow column. The choice is
 remembered; `--width <px>` still pins an explicit column for one session.
 
-### Monitors
+## Monitors
 
 Menus open on the monitor where the window lives. The File menu is anchored in screen coordinates
 and, after opening, verified: if a dropdown ended up on another monitor it is moved back and kept

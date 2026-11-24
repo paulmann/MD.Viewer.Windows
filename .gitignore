@@ -10,6 +10,7 @@ publish/
 # Local tooling
 .nuget/
 _tools/
+.ghagent/
 *.log
 *.binlog
 

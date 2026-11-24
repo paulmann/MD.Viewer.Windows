@@ -9,7 +9,7 @@ installer 34.8 MB · portable exe 50 MB
 
 | | |
 | --- | --- |
-| **Modes** | Rendered · Source (highlighted, read-only) · Editor (live preview, `Ctrl+Shift+P`) |
+| **Modes** | Rendered · Source (highlighted, read-only) · Editor (`Ctrl+E`; `Ctrl+Shift+P` splits a live preview) |
 | **Themes** | Light, dark, and *follow Windows* — one click flips the appearance |
 | **Tabs** | Every document in a tab; drag a tab to another monitor to give it its own window, drag it onto another window to make it a tab there |
 | **Width** | 100 % / 75 % / 50 % of the pane next to the magnifier; 100 % is measured after the outline |

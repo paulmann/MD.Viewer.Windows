@@ -1,4 +1,4 @@
-## Command line
+# Command line
 
 ```text
 mdview [file.md] [more.md …] [options]
@@ -6,7 +6,7 @@ mdview [file.md] [more.md …] [options]
 
 Several files open as tabs. Exit codes: `0` success, `2` bad arguments or a missing input.
 
-### Appearance
+## Appearance
 
 | Switch | Meaning |
 | --- | --- |
@@ -15,20 +15,20 @@ Several files open as tabs. Exit codes: `0` success, `2` bad arguments or a miss
 | `--zoom <1.25\|125%\|+10%>` | zoom factor |
 | `--width <px>` | reading column width (380…2400); cannot exceed the pane |
 | `--serif` / `--sans` | reading font family |
-| `--numbering` | number the headings |
+| `--numbering` / `--no-numbering` | number the headings |
 | `--toc` / `--no-toc` | outline sidebar |
-| `--line-numbers`, `--wrap` / `--no-wrap` | code presentation |
+| `--line-numbers` / `--no-line-numbers`, `--wrap` / `--no-wrap` | code presentation |
 | `--maximized`, `--fullscreen` | window state |
 | `--position <x,y>` | window origin in screen coordinates (used by a dragged tab) |
 
-### Navigation
+## Navigation
 
 | Switch | Meaning |
 | --- | --- |
 | `--line <n>` | jump to a line |
 | `--anchor <id>` | jump to a heading anchor |
 
-### Output
+## Output
 
 | Switch | Meaning |
 | --- | --- |
@@ -36,7 +36,7 @@ Several files open as tabs. Exit codes: `0` success, `2` bad arguments or a miss
 | `--out <file>` | export target |
 | `--print` | open the print dialog |
 
-### Other
+## Other
 
 | Switch | Meaning |
 | --- | --- |
@@ -47,7 +47,12 @@ Several files open as tabs. Exit codes: `0` success, `2` bad arguments or a miss
 | `--diagnostics` | print environment information |
 | `--version`, `--help` | version, help |
 
-### Development switches
+## Aliases
+
+`-m`, `--view` = `--mode` · `-l` = `--line` · `-a` = `--anchor` · `--outline`, `--sidebar` =
+`--toc` · `--max` = `--maximized` · `-v` = `--version` · `-h`, `-?` = `--help`.
+
+## Development switches
 
 These exist for the screenshot and layout suites; they are documented because they are useful when
 reporting a bug.

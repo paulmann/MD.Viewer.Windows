@@ -1,14 +1,14 @@
-## Building
+# Building
 
 Zero dependencies, no NuGet packages, no binary assets: `dotnet list package` must stay empty.
 
-### Toolchain
+## Toolchain
 
 * Windows 10/11 x64, **.NET 11 SDK** (the pinned version is in `global.json`; `LangVersion` is
   `preview` so C# 15 works).
 * PowerShell 7 for the build driver.
 
-### Tasks
+## Tasks
 
 ```powershell
 pwsh -File build/build.ps1 -Task build      # compile everything
@@ -19,7 +19,7 @@ pwsh -File build/build.ps1 -Task shots      # UI smoke suite (needs a desktop se
 pwsh -File build/build.ps1 -Task run        # start the development build
 ```
 
-### Where the artefacts land
+## Where the artefacts land
 
 | Build | Path | Needs .NET installed |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ Development builds set `UseAppHost=false`, because a framework-dependent `mdview
 shipped program but greets the reader with “You must install or update .NET”. The only `mdview.exe`
 in the tree is the published one.
 
-### Traps of this workspace
+## Traps of this workspace
 
 1. **`dotnet` on PATH may be a runtime-only copy** shipped with a host application; it cannot build.
    The build script resolves a real SDK itself.
