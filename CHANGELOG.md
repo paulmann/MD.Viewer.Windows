@@ -6,6 +6,25 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **The English README showed a screenshot with Russian text.** `docs/img/mermaid.png` was captured
+  from `samples/mermaid.md`, whose diagram labels are Russian, and the same file was used by both
+  READMEs. Screenshots now come in two complete sets: the plain names in `docs/img` are English
+  (`README.md`), the `-ru` names are Russian (`README.ru.md`). `build/doc-shots.ps1` regenerates all
+  twelve files from `samples/demo.md`, `samples/mermaid-en.md`, `samples/ru-пример.md` and
+  `samples/mermaid.md`, and the diagram figures are rendered with `--export png` so they contain the
+  document only — no window chrome.
+- `mdview-tests --ui-smoke <file>` ignored the file: the path was read from `args[0]`, which is
+  `--ui-smoke`, so every run captured `samples/demo.md`. The input is now the first argument that is
+  neither a switch nor a switch value, and `--lang <en|ru>` names the captures for a language
+  (`rendered-light.png` / `rendered-light-ru.png`). This is what produced the mixed-language pictures
+  in the first place.
+- `build/screenshots.ps1` never applied its `-Input` parameter: `$Input` is PowerShell's automatic
+  pipeline enumerator, so the parameter silently stayed empty. Renamed to `-Markdown`, and the
+  script now picks a `DOTNET_ROOT` that actually carries .NET 11 instead of trusting the session's
+  runtime-only copy (`-Task shots` failed with exit code 2 before this).
+
 ### Changed
 
 - **Development builds no longer produce a runnable-looking `mdview.exe`.** The `dotnet build`

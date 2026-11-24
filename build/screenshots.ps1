@@ -15,7 +15,7 @@
 .PARAMETER Configuration
     Build configuration whose test runner is used (default: Release).
 
-.PARAMETER Input
+.PARAMETER Markdown
     Markdown file to open (default: samples/demo.md).
 
 .PARAMETER Out
@@ -27,7 +27,9 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
 
-    [string]$Input = 'samples/demo.md',
+    # Not `$Input`: that name is PowerShell's automatic pipeline enumerator, so a
+    # parameter called Input never binds and silently stays empty.
+    [string]$Markdown = 'samples/demo.md',
 
     [string]$Out = 'artifacts/screenshots'
 )
@@ -44,7 +46,7 @@ if (-not (Test-Path $exe)) {
     throw "test runner not found: $exe (run build.ps1 -Task build first)"
 }
 
-$inputPath = if ([System.IO.Path]::IsPathRooted($Input)) { $Input } else { Join-Path $repoRoot $Input }
+$inputPath = if ([System.IO.Path]::IsPathRooted($Markdown)) { $Markdown } else { Join-Path $repoRoot $Markdown }
 if (-not (Test-Path $inputPath)) {
     throw "input not found: $inputPath"
 }
@@ -53,16 +55,25 @@ $outPath = if ([System.IO.Path]::IsPathRooted($Out)) { $Out } else { Join-Path $
 New-Item -ItemType Directory -Force -Path $outPath | Out-Null
 
 # The apphost resolves the runtime from DOTNET_ROOT; the session points it at a
-# runtime-only copy, so aim it at the SDK that produced the build.
-if ($env:DOTNET_ROOT) {
-    $candidate = $env:DOTNET_ROOT
-} else {
-    $candidate = 'C:\GIT\_tools\dotnet11'
+# runtime-only copy, so pick a root that actually carries .NET 11.
+$candidates = @('C:\GIT\_tools\dotnet11', $env:DOTNET_ROOT, 'C:\Program Files\dotnet') |
+    Where-Object { $_ -and (Test-Path $_) }
+$runtimeRoot = $null
+foreach ($candidate in $candidates) {
+    $shared = Join-Path $candidate 'shared/Microsoft.NETCore.App'
+    if ((Test-Path $shared) -and (Get-ChildItem $shared -Directory | Where-Object { $_.Name -like '11.*' })) {
+        $runtimeRoot = $candidate
+        break
+    }
+}
+
+if (-not $runtimeRoot) {
+    throw 'no .NET 11 runtime found; set DOTNET_ROOT to the SDK that built this tree'
 }
 
 Push-Location $repoRoot
 try {
-    if (Test-Path $candidate) { $env:DOTNET_ROOT = $candidate }
+    $env:DOTNET_ROOT = $runtimeRoot
     & $exe --ui-smoke $inputPath --out $outPath
     $code = $LASTEXITCODE
 } finally {

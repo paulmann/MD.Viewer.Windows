@@ -15,14 +15,48 @@ public static class UiSmoke
 {
     public static int Run(string[] args)
     {
-        string input = args.Length > 0 && !args[0].StartsWith("--") ? args[0] : "samples/demo.md";
+        // The runner is started as `mdview-tests --ui-smoke <file> --out <dir> --lang <code>`,
+        // so the input is the first argument that is neither a switch nor a switch value.
+        string input = "samples/demo.md";
         string outputDirectory = "screenshots";
+        string? language = null;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] is "--out" or "--lang")
+            {
+                i++;
+                continue;
+            }
+
+            if (args[i].StartsWith("--", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            input = args[i];
+            break;
+        }
+
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--out")
             {
                 outputDirectory = args[i + 1];
             }
+
+            if (args[i] == "--lang")
+            {
+                language = args[i + 1];
+            }
+        }
+
+        // A language turns the run into a documentation capture: English keeps the plain
+        // page names used by README.md, Russian appends "-ru" for README.ru.md.
+        string suffix = string.Empty;
+        if (language is not null)
+        {
+            L.Use(language);
+            suffix = L.Russian ? "-ru" : string.Empty;
         }
 
         if (!File.Exists(input))
@@ -45,6 +79,7 @@ public static class UiSmoke
             Mode = "render",
             WindowWidth = 1180,
             WindowHeight = 860,
+            Language = language ?? "auto",
         };
 
         var failures = new List<string>();
@@ -98,7 +133,8 @@ public static class UiSmoke
                 }
 
                 Application.DoEvents();
-                string path = Path.Combine(outputDirectory, $"ui-{current.Name}.png");
+                string path = Path.Combine(outputDirectory,
+                    language is null ? $"ui-{current.Name}.png" : current.Name + suffix + ".png");
                 try
                 {
                     WindowCapture.Save(form, path, clientOnly: true);
@@ -143,7 +179,7 @@ public static class UiSmoke
             return 1;
         }
 
-        Console.WriteLine($"UI smoke passed — {Directory.GetFiles(outputDirectory, "ui-*.png").Length} captures in {outputDirectory}");
+        Console.WriteLine($"UI smoke passed — {Directory.GetFiles(outputDirectory, "*.png").Length} captures in {outputDirectory}");
         return 0;
     }
 

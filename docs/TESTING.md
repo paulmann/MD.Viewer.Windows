@@ -15,8 +15,7 @@ framework dependency.
 | `math layout` | 7 | Box metrics: fractions taller than letters, raised/lowered scripts, growing fences, matrix width |
 | `theme` | 25 | WCAG contrast for every palette pair that carries text, both themes, plus registry detection |
 | `start-up defaults`, `theme gesture` | 7 | Rendered start-up, remember-mode switch, `--mode` precedence, one-click theme flip |
-| `view width`, `tabs`, `dragged tabs`, `menu placement` | 17 | 100/75/50 % narrowing, persisted choice, two documents in tabs, tab payload across processes, drop effects, menu geometry |
-| `diagrams` + `mermaid:*` | 17 | Flowchart and six more diagram types, shapes, labels, dispatch, fallbacks |
+| `view width`, `tabs`, `dragged tabs`, `menu placement` | 17 | 100/75/50 % narrowing, persisted choice, two documents in tabs, tab payload across processes, drop effects, menu geometry || `diagrams` + `mermaid:*` | 17 | Flowchart and six more diagram types, shapes, labels, dispatch, fallbacks |
 | `editor` | 4 | Insert/replace/selection, find hits, caret coordinates |
 | `extras` | 19 | Emphasis corners, reference links, definition lists, typography, line breaks, glossary, images |
 | `glossary hover` | 3 | Term hit-testing on the real document view |
@@ -36,11 +35,27 @@ mdview-tests.exe --snapshot samples\demo.md out.png --theme dark --width 900 [--
 
 # drive the real window through every mode and theme, verify the captures are not blank
 mdview-tests.exe --ui-smoke samples\demo.md --out screenshots
+
+# the same, but as documentation captures for one language
+mdview-tests.exe --ui-smoke samples\demo.md --out docs\img --lang en   # rendered-light.png …
+mdview-tests.exe --ui-smoke samples\ru-пример.md --out docs\img --lang ru  # …-ru.png
 ```
 
 `--ui-smoke` opens `MainForm`, switches Rendered/Source/Editor and Light/Dark, captures the client
 area with `PrintWindow` (the only reliable way for double-buffered controls) and fails if a capture
 is smaller than 400×300 or contains fewer than 20 non-background samples.
+
+`--lang en` writes the plain names (`rendered-light.png`) used by `README.md`, `--lang ru` writes the
+`-ru` names used by `README.ru.md`. Both sets are produced by one command:
+
+```powershell
+pwsh -File build/doc-shots.ps1      # 12 files in docs/img, both languages
+```
+
+**A screenshot must not mix languages.** The English page shows English documents and English
+interface text; the Russian page shows Russian ones. The picture and the reader's language are part
+of the same claim, and a mismatch is a bug, not a cosmetic detail. The comment diagrams (`mermaid*.png`)
+are rendered headless with `--export png`, so they contain the document and nothing else.
 
 ## Visual review helpers
 
