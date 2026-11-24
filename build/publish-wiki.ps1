@@ -83,6 +83,12 @@ try {
 
     Push-Location $workDir
     try {
+        # GIT_AUTHOR_* / GIT_COMMITTER_* in the environment beat `git -c user.name=…`,
+        # so they are cleared in this process before committing.
+        foreach ($name in 'GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL') {
+            Remove-Item -Path "Env:$name" -ErrorAction SilentlyContinue
+        }
+
         & git add -A
         & git -c 'user.name=Mikhail Deynekin' -c 'user.email=Mikhail@Deynekin.com' commit --quiet -m $Message
         if ($LASTEXITCODE -ne 0) {
